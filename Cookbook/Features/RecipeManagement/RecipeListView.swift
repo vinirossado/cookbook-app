@@ -134,7 +134,7 @@ struct RecipeListView: View {
                     }
                 }
             }
-            .padding(.horizontal)
+            .padding(.horizontal, 16)
         }
     }
     
@@ -154,50 +154,46 @@ struct RecipeListView: View {
                     }
                 }
             }
-            .padding(.horizontal)
+            .padding(.horizontal, 16)
         }
     }
     
     private var recipesSection: some View {
-        GeometryReader { geometry in
-            let cardWidth = (geometry.size.width - 32 - 12) / 2 // 32 for horizontal padding, 12 for spacing
-            
-            LazyVGrid(columns: [
-                GridItem(.fixed(cardWidth)),
-                GridItem(.fixed(cardWidth))
-            ], spacing: 12) {
-                ForEach(filteredRecipes) { recipe in
-                    RecipeCard(
-                        recipe: recipe,
-                        onFavoriteToggle: {
-                            print("🔖 Favorite toggle for recipe: \(recipe.title)")
-                            appState.toggleFavorite(recipe)
-                        },
-                        onWantToday: {
-                            print("⏰ Want today for recipe: \(recipe.title)")
-                            // Create a new planned meal for today with "want today" set to true
-                            let todayMeal = PlannedMeal(
-                                recipeId: recipe.id,
-                                recipeName: recipe.title,
-                                mealType: .lunch, // Default to lunch
-                                scheduledDate: Date(),
-                                servings: recipe.servingSize
-                            )
-                            appState.addMealToPlan(todayMeal)
-                            appState.markWantToday(todayMeal)
-                        },
-                        onTap: {
-                            print("🔍 Recipe card tapped: \(recipe.title)")
-                            print("📱 Setting selectedRecipe to: \(recipe.title)")
-                            selectedRecipe = recipe
-                            print("✅ selectedRecipe is now: \(selectedRecipe?.title ?? "nil")")
-                        }
-                    )
-                    .frame(width: cardWidth)
-                }
+        let columns = [
+            GridItem(.flexible(minimum: 150, maximum: .infinity), spacing: 6),
+            GridItem(.flexible(minimum: 150, maximum: .infinity), spacing: 6)
+        ]
+        
+        return LazyVGrid(columns: columns, spacing: 16) {
+            ForEach(filteredRecipes) { recipe in
+                RecipeCard(
+                    recipe: recipe,
+                    onFavoriteToggle: {
+                        print("🔖 Favorite toggle for recipe: \(recipe.title)")
+                        appState.toggleFavorite(recipe)
+                    },
+                    onWantToday: {
+                        print("⏰ Want today for recipe: \(recipe.title)")
+                        // Create a new planned meal for today with "want today" set to true
+                        let todayMeal = PlannedMeal(
+                            recipeId: recipe.id,
+                            recipeName: recipe.title,
+                            mealType: .lunch, // Default to lunch
+                            scheduledDate: Date(),
+                            servings: recipe.servingSize
+                        )
+                        appState.addMealToPlan(todayMeal)
+                        appState.markWantToday(todayMeal)
+                    },
+                    onTap: {
+                        print("🔍 Recipe card tapped: \(recipe.title)")
+                        print("📱 Setting selectedRecipe to: \(recipe.title)")
+                        selectedRecipe = recipe
+                        print("✅ selectedRecipe is now: \(selectedRecipe?.title ?? "nil")")
+                    }
+                )
             }
         }
-        .frame(minHeight: CGFloat(filteredRecipes.count / 2 + filteredRecipes.count % 2) * 212) // 200 card height + 12 spacing
         .padding(.horizontal, 16)
         .padding(.bottom, 20)
     }
