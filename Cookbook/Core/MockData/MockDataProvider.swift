@@ -644,7 +644,7 @@ struct MockDataProvider {
         // Return real food image URLs from Pexels
         switch title {
         case "Perfect Fluffy Pancakes":
-            return "photos"
+            return "https://images.pexels.com/photos/1351238/pexels-photo-1351238.jpeg?auto=compress&cs=tinysrgb&w=800"
         case "Avocado Toast with Poached Egg":
             return "https://images.pexels.com/photos/1351238/pexels-photo-1351238.jpeg?auto=compress&cs=tinysrgb&w=800"
         case "Mediterranean Quinoa Salad":

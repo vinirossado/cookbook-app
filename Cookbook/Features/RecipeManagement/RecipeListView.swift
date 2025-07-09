@@ -14,6 +14,12 @@ struct RecipeListView: View {
     @State private var showingFilters = false
     @State private var selectedRecipe: Recipe?
     
+    // Visual feedback states
+    @State private var showingToast = false
+    @State private var toastMessage = ""
+    @State private var toastIcon = ""
+    @State private var recentlyTappedCards: Set<UUID> = []
+    
     init(viewModel: RecipeListViewModel) {
         self._viewModel = State(wrappedValue: viewModel)
     }
@@ -23,6 +29,7 @@ struct RecipeListView: View {
             LazyVStack(spacing: 20) {
                 // Search Bar
                 searchSection
+                    .padding(.top, 16)
                 
                 // Category Filters
                 categoryFilterSection
@@ -83,6 +90,21 @@ struct RecipeListView: View {
             print("✅ Module created successfully")
             return module
         }
+        .overlay(
+            // Toast notification
+            VStack {
+                Spacer()
+                if showingToast {
+                    ToastView(message: toastMessage, icon: toastIcon)
+                        .transition(.asymmetric(
+                            insertion: .move(edge: .bottom).combined(with: .opacity),
+                            removal: .opacity
+                        ))
+                        .animation(.easeInOut(duration: 0.3), value: showingToast)
+                        .padding(.bottom, 100)
+                }
+            }
+        )
     }
     
     private var searchSection: some View {
@@ -170,7 +192,20 @@ struct RecipeListView: View {
                     recipe: recipe,
                     onFavoriteToggle: {
                         print("🔖 Favorite toggle for recipe: \(recipe.title)")
-                        appState.toggleFavorite(recipe)
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            appState.toggleFavorite(recipe)
+                        }
+                        
+                        // Haptic feedback
+                        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+                        impactFeedback.impactOccurred()
+                        
+                        // Show toast
+                        let isFavorite = appState.favoriteRecipes.contains(recipe.id)
+                        showToast(
+                            message: isFavorite ? "Added to favorites" : "Removed from favorites",
+                            icon: isFavorite ? "heart.fill" : "heart"
+                        )
                     },
                     onWantToday: {
                         print("⏰ Want today for recipe: \(recipe.title)")
@@ -184,13 +219,51 @@ struct RecipeListView: View {
                         )
                         appState.addMealToPlan(todayMeal)
                         appState.markWantToday(todayMeal)
+                        
+                        // Haptic feedback
+                        let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+                        impactFeedback.impactOccurred()
+                        
+                        // Show toast
+                        showToast(
+                            message: "Added to today's meal plan",
+                            icon: "clock.fill"
+                        )
+                    },
+                    onAddToShoppingCart: {
+                        print("🛒 Add to shopping cart for recipe: \(recipe.title)")
+                        
+                        // Add recipe ingredients to shopping cart
+                        appState.addRecipeToShoppingCart(recipe)
+                        
+                        // Haptic feedback
+                        let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+                        impactFeedback.impactOccurred()
+                        
+                        // Show toast
+                        showToast(
+                            message: "Added \(recipe.ingredients.count) ingredients to cart",
+                            icon: "cart.fill"
+                        )
                     },
                     onTap: {
                         print("🔍 Recipe card tapped: \(recipe.title)")
                         print("📱 Setting selectedRecipe to: \(recipe.title)")
+                        
+                        // Visual feedback for card tap
+                        recentlyTappedCards.insert(recipe.id)
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                            recentlyTappedCards.remove(recipe.id)
+                        }
+                        
+                        // Haptic feedback
+                        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+                        impactFeedback.impactOccurred()
+                        
                         selectedRecipe = recipe
                         print("✅ selectedRecipe is now: \(selectedRecipe?.title ?? "nil")")
-                    }
+                    },
+                    isRecentlyTapped: recentlyTappedCards.contains(recipe.id)
                 )
             }
         }
@@ -204,6 +277,22 @@ struct RecipeListView: View {
             category: appState.selectedCategory,
             filters: appState.filterOptions
         )
+    }
+    
+    // MARK: - Helper Methods
+    private func showToast(message: String, icon: String) {
+        toastMessage = message
+        toastIcon = icon
+        withAnimation(.easeInOut(duration: 0.3)) {
+            showingToast = true
+        }
+        
+        // Auto-hide after 2 seconds
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+            withAnimation(.easeInOut(duration: 0.3)) {
+                showingToast = false
+            }
+        }
     }
 }
 
@@ -263,7 +352,9 @@ struct RecipeCard: View {
     let recipe: Recipe
     let onFavoriteToggle: () -> Void
     let onWantToday: () -> Void
+    let onAddToShoppingCart: () -> Void
     let onTap: () -> Void
+    let isRecentlyTapped: Bool
     @Environment(AppState.self) private var appState
     
     var body: some View {
@@ -280,6 +371,21 @@ struct RecipeCard: View {
                 
                 // Action Buttons
                 HStack(spacing: 4) {
+                    // Shopping Cart Button
+                    Button(action: {
+                        onAddToShoppingCart()
+                    }) {
+                        Image(systemName: "cart.fill")
+                            .foregroundColor(.white)
+                            .font(.system(size: 11, weight: .medium))
+                            .frame(width: 24, height: 24)
+                            .background(
+                                Circle()
+                                    .fill(CookBookColors.accent.opacity(0.8))
+                                    .background(Circle().fill(.ultraThinMaterial))
+                            )
+                    }
+                    
                     // Want Today Button
                     Button(action: {
                         onWantToday()
@@ -373,6 +479,9 @@ struct RecipeCard: View {
                 .fill(CookBookColors.cardBackground)
                 .shadow(color: Color.black.opacity(0.06), radius: 2, x: 0, y: 1)
         )
+        .scaleEffect(isRecentlyTapped ? 0.98 : 1.0)
+        .opacity(isRecentlyTapped ? 0.8 : 1.0)
+        .animation(.easeInOut(duration: 0.1), value: isRecentlyTapped)
         .contentShape(Rectangle())
         .onTapGesture {
             onTap()
@@ -486,6 +595,39 @@ struct FiltersView: View {
     var body: some View {
         Text("Filters View")
             .navigationTitle("Filters")
+    }
+}
+
+// MARK: - Toast Component
+struct ToastView: View {
+    let message: String
+    let icon: String
+    
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 16, weight: .medium))
+                .foregroundColor(CookBookColors.primary)
+            
+            Text(message)
+                .font(CookBookFonts.callout)
+                .fontWeight(.medium)
+                .foregroundColor(CookBookColors.text)
+            
+            Spacer()
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 16)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(CookBookColors.cardBackground)
+                .shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: 4)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(CookBookColors.primary.opacity(0.2), lineWidth: 1)
+        )
+        .padding(.horizontal, 20)
     }
 }
 

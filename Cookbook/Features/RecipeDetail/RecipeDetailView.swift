@@ -17,6 +17,11 @@ struct RecipeDetailView: View {
     @State private var showingEditMode = false
     @State private var showingShareSheet = false
     
+    // Visual feedback states
+    @State private var showingToast = false
+    @State private var toastMessage = ""
+    @State private var toastIcon = ""
+    
     init(recipe: Recipe, viewModel: RecipeDetailViewModel) {
         self.recipe = recipe
         self._viewModel = State(wrappedValue: viewModel)
@@ -59,7 +64,19 @@ struct RecipeDetailView: View {
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 HStack {
-                    Button(action: { viewModel.toggleFavorite() }) {
+                    Button(action: { 
+                        viewModel.toggleFavorite() 
+                        
+                        // Haptic feedback
+                        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+                        impactFeedback.impactOccurred()
+                        
+                        // Show toast
+                        showToast(
+                            message: viewModel.isFavorite ? "Added to favorites" : "Removed from favorites",
+                            icon: viewModel.isFavorite ? "heart.fill" : "heart"
+                        )
+                    }) {
                         Image(systemName: viewModel.isFavorite ? "heart.fill" : "heart")
                             .foregroundColor(viewModel.isFavorite ? CookBookColors.accent : CookBookColors.textSecondary)
                     }
@@ -76,6 +93,16 @@ struct RecipeDetailView: View {
                         
                         Button("Add to Shopping List") {
                             viewModel.addIngredientsToShoppingList()
+                            
+                            // Haptic feedback
+                            let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+                            impactFeedback.impactOccurred()
+                            
+                            // Show toast
+                            showToast(
+                                message: "Added \(recipe.ingredients.count) ingredients to cart",
+                                icon: "cart.fill"
+                            )
                         }
                         
                         Button("Add to Meal Plan") {
@@ -86,6 +113,16 @@ struct RecipeDetailView: View {
                         
                         Button("Want to Cook Today") {
                             viewModel.addToWantToday()
+                            
+                            // Haptic feedback
+                            let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+                            impactFeedback.impactOccurred()
+                            
+                            // Show toast
+                            showToast(
+                                message: "Added to today's meal plan",
+                                icon: "clock.fill"
+                            )
                         }
                         
                         Button("Duplicate Recipe") {
@@ -111,6 +148,21 @@ struct RecipeDetailView: View {
         .onAppear {
             viewModel.loadRecipeDetails(recipe)
         }
+        .overlay(
+            // Toast notification
+            VStack {
+                Spacer()
+                if showingToast {
+                    ToastView(message: toastMessage, icon: toastIcon)
+                        .transition(.asymmetric(
+                            insertion: .move(edge: .bottom).combined(with: .opacity),
+                            removal: .opacity
+                        ))
+                        .animation(.easeInOut(duration: 0.3), value: showingToast)
+                        .padding(.bottom, 100)
+                }
+            }
+        )
     }
     
     private var heroImageSection: some View {
@@ -307,6 +359,16 @@ struct RecipeDetailView: View {
             
             Button("Add All to Shopping List") {
                 viewModel.addIngredientsToShoppingList()
+                
+                // Haptic feedback
+                let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+                impactFeedback.impactOccurred()
+                
+                // Show toast
+                showToast(
+                    message: "Added \(viewModel.adjustedIngredients.count) ingredients to cart",
+                    icon: "cart.fill"
+                )
             }
             .font(CookBookFonts.callout)
             .fontWeight(.medium)
@@ -451,6 +513,22 @@ struct RecipeDetailView: View {
     
     private func calculateDailyValue(_ amount: Double, recommendedDaily: Double) -> Int {
         return Int((amount / recommendedDaily) * 100)
+    }
+    
+    // MARK: - Helper Methods
+    private func showToast(message: String, icon: String) {
+        toastMessage = message
+        toastIcon = icon
+        withAnimation(.easeInOut(duration: 0.3)) {
+            showingToast = true
+        }
+        
+        // Auto-hide after 2 seconds
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+            withAnimation(.easeInOut(duration: 0.3)) {
+                showingToast = false
+            }
+        }
     }
 }
 
