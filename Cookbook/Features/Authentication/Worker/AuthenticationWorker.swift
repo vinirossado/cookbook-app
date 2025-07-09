@@ -26,7 +26,7 @@ class AuthenticationWorker: AuthenticationWorkerProtocol {
         // Simulate API call delay
         try await Task.sleep(nanoseconds: 1_500_000_000) // 1.5 seconds
         
-        // Mock authentication logic
+        // Strict authentication - only allow exact demo credentials
         if email == "demo@cookbookpro.com" && password == "password" {
             let user = User(
                 name: "Demo User",
@@ -42,19 +42,8 @@ class AuthenticationWorker: AuthenticationWorkerProtocol {
         } else if !isValidEmail(email) {
             throw AuthenticationError.invalidInput("Please enter a valid email address")
         } else {
-            // Simulate random success/failure for demo purposes
-            let shouldSucceed = Bool.random()
-            if shouldSucceed {
-                let user = User(
-                    name: extractNameFromEmail(email),
-                    email: email,
-                    profileImage: nil,
-                    preferences: UserPreferences()
-                )
-                return user
-            } else {
-                throw AuthenticationError.invalidCredentials
-            }
+            // Any other credentials are invalid
+            throw AuthenticationError.invalidCredentials
         }
     }
     

@@ -59,17 +59,6 @@ class WatchConnectivityManager: NSObject, ObservableObject {
         session.sendMessage(message, replyHandler: nil) { error in
             print("Error toggling shopping item: \(error.localizedDescription)")
         }
-        
-        // Optimistically update UI - temporarily disabled due to type mismatch
-        // if let index = shoppingItems.firstIndex(where: { $0 == itemId }) {
-        //     // Temporarily commented out due to Watch model issues
-        //     // shoppingItems[index] = WatchShoppingItem(
-        //     //     id: shoppingItems[index].id,
-        //     //     name: shoppingItems[index].name,  
-        //     //     quantity: shoppingItems[index].quantity,
-        //     //     isCompleted: !shoppingItems[index].isCompleted
-        //     // )
-        // }
     }
     
     func markWantToday(recipeId: UUID) {
@@ -240,84 +229,3 @@ extension WatchConnectivityManager: WCSessionDelegate {
         }
     }
 }
-
-// MARK: - Data Model Extensions
-// MARK: - Temporarily commented out Watch model extensions
-/*
-extension WatchMeal {
-    static func from(_ dict: [String: Any]) -> WatchMeal? {
-        guard 
-            let idString = dict["id"] as? String,
-            let id = UUID(uuidString: idString),
-            let recipeName = dict["recipeName"] as? String,
-            let mealType = dict["mealType"] as? String,
-            let recipeIdString = dict["recipeId"] as? String,
-            let recipeId = UUID(uuidString: recipeIdString)
-        else { return nil }
-        
-        return WatchMeal(
-            id: id,
-            recipeName: recipeName,
-            mealType: mealType,
-            recipeId: recipeId
-        )
-    }
-}
-
-extension WatchRecipe {
-    static func from(_ dict: [String: Any]) -> WatchRecipe? {
-        guard 
-            let idString = dict["id"] as? String,
-            let id = UUID(uuidString: idString),
-            let title = dict["title"] as? String,
-            let cookingTime = dict["cookingTime"] as? Int,
-            let difficulty = dict["difficulty"] as? String
-        else { return nil }
-        
-        return WatchRecipe(
-            id: id,
-            title: title,
-            cookingTime: cookingTime,
-            difficulty: difficulty
-        )
-    }
-}
-
-extension WatchShoppingItem {
-    static func from(_ dict: [String: Any]) -> WatchShoppingItem? {
-        guard 
-            let idString = dict["id"] as? String,
-            let id = UUID(uuidString: idString),
-            let name = dict["name"] as? String,
-            let quantity = dict["quantity"] as? String,
-            let isCompleted = dict["isCompleted"] as? Bool
-        else { return nil }
-        
-        return WatchShoppingItem(
-            id: id,
-            name: name,
-            quantity: quantity,
-            isCompleted: isCompleted
-        )
-    }
-}
-
-extension WatchTimer {
-    static func from(_ dict: [String: Any]) -> WatchTimer? {
-        guard 
-            let idString = dict["id"] as? String,
-            let id = UUID(uuidString: idString),
-            let recipeName = dict["recipeName"] as? String,
-            let stepNumber = dict["stepNumber"] as? Int,
-            let endTimeInterval = dict["endTime"] as? TimeInterval
-        else { return nil }
-        
-        return WatchTimer(
-            id: id,
-            recipeName: recipeName,
-            stepNumber: stepNumber,
-            endTime: Date(timeIntervalSince1970: endTimeInterval)
-        )
-    }
-}
-*/
