@@ -230,74 +230,83 @@ struct RecipeListView: View {
     }
     
     private var recipesSection: some View {
-        let columns = [
-            GridItem(.flexible(minimum: 150, maximum: .infinity), spacing: 6),
-            GridItem(.flexible(minimum: 150, maximum: .infinity), spacing: 6)
-        ]
+        let recipes = filteredRecipes
+        let chunkedRecipes = recipes.chunked(into: 2)
         
-        return LazyVGrid(columns: columns, spacing: 16) {
-            ForEach(filteredRecipes) { recipe in
-                RecipeCard(
-                    recipe: recipe,
-                    onFavoriteToggle: {
-                        print("🔖 Favorite toggle for recipe: \(recipe.title)")
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            appState.toggleFavorite(recipe)
-                        }
-                        
-                        // Haptic feedback
-                        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
-                        impactFeedback.impactOccurred()
-                        
-                        // Show toast
-                        let isFavorite = appState.favoriteRecipes.contains(recipe.id)
-                        showToast(
-                            message: isFavorite ? "Added to favorites" : "Removed from favorites",
-                            icon: isFavorite ? "heart.fill" : "heart"
+        return VStack(spacing: 16) {
+            ForEach(Array(chunkedRecipes.enumerated()), id: \.offset) { index, recipeRow in
+                HStack(spacing: 12) {
+                    ForEach(recipeRow, id: \.id) { recipe in
+                        RecipeCard(
+                            recipe: recipe,
+                            onFavoriteToggle: {
+                                print("🔖 Favorite toggle for recipe: \(recipe.title)")
+                                withAnimation(.easeInOut(duration: 0.2)) {
+                                    appState.toggleFavorite(recipe)
+                                }
+                                
+                                // Haptic feedback
+                                let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+                                impactFeedback.impactOccurred()
+                                
+                                // Show toast
+                                let isFavorite = appState.favoriteRecipes.contains(recipe.id)
+                                showToast(
+                                    message: isFavorite ? "Added to favorites" : "Removed from favorites",
+                                    icon: isFavorite ? "heart.fill" : "heart"
+                                )
+                            },
+                            onWantToday: {
+                                print("⏰ Want today for recipe: \(recipe.title)")
+                                // Create a new planned meal for today with "want today" set to true
+                                let todayMeal = PlannedMeal(
+                                    recipeId: recipe.id,
+                                    recipeName: recipe.title,
+                                    mealType: .lunch, // Default to lunch
+                                    scheduledDate: Date(),
+                                    servings: recipe.servingSize
+                                )
+                                appState.addMealToPlan(todayMeal)
+                                appState.markWantToday(todayMeal)
+                                
+                                // Haptic feedback
+                                let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+                                impactFeedback.impactOccurred()
+                                
+                                // Show toast
+                                showToast(
+                                    message: "Added to Want Today",
+                                    icon: "clock.fill"
+                                )
+                                
+                                // Mark as recently tapped for visual feedback
+                                recentlyTappedCards.insert(recipe.id)
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                                    recentlyTappedCards.remove(recipe.id)
+                                }
+                            },
+                            onTap: {
+                                // Haptic feedback
+                                let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+                                impactFeedback.impactOccurred()
+                                
+                                selectedRecipe = recipe
+                                print("✅ selectedRecipe is now: \(selectedRecipe?.title ?? "nil")")
+                            },
+                            isRecentlyTapped: recentlyTappedCards.contains(recipe.id)
                         )
-                    },
-                    onWantToday: {
-                        print("⏰ Want today for recipe: \(recipe.title)")
-                        // Create a new planned meal for today with "want today" set to true
-                        let todayMeal = PlannedMeal(
-                            recipeId: recipe.id,
-                            recipeName: recipe.title,
-                            mealType: .lunch, // Default to lunch
-                            scheduledDate: Date(),
-                            servings: recipe.servingSize
-                        )
-                        appState.addMealToPlan(todayMeal)
-                        appState.markWantToday(todayMeal)
-                        
-                        // Haptic feedback
-                        let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
-                        impactFeedback.impactOccurred()
-                        
-                        // Show toast
-                        showToast(
-                            message: "Added to Want Today",
-                            icon: "clock.fill"
-                        )
-                        
-                        // Mark as recently tapped for visual feedback
-                        recentlyTappedCards.insert(recipe.id)
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                            recentlyTappedCards.remove(recipe.id)
-                        }
-                    },
-                    onTap: {
-                        // Haptic feedback
-                        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
-                        impactFeedback.impactOccurred()
-                        
-                        selectedRecipe = recipe
-                        print("✅ selectedRecipe is now: \(selectedRecipe?.title ?? "nil")")
-                    },
-                    isRecentlyTapped: recentlyTappedCards.contains(recipe.id)
-                )
+                        .frame(maxWidth: .infinity)
+                    }
+                    
+                    // Fill remaining space if odd number of recipes
+                    if recipeRow.count == 1 {
+                        Spacer()
+                            .frame(maxWidth: .infinity)
+                    }
+                }
             }
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, 10)
         .padding(.bottom, 20)
     }
     
@@ -792,4 +801,13 @@ struct ToastView: View {
     
     return RecipeListView(viewModel: viewModel)
         .environment(AppState.shared)
+}
+
+// MARK: - Array Extension for Chunking
+extension Array {
+    func chunked(into size: Int) -> [[Element]] {
+        return stride(from: 0, to: count, by: size).map {
+            Array(self[$0..<Swift.min($0 + size, count)])
+        }
+    }
 }
