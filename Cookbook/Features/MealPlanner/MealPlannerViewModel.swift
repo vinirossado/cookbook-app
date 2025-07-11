@@ -34,68 +34,21 @@ class MealPlannerViewModel {
     func navigateToMealDetail(_ meal: PlannedMeal) {
         router.navigateToMealDetail(meal: meal)
     }
-}
-
-// MARK: - VIP Protocol Implementations
-protocol MealPlannerInteractorProtocol {
-    var presenter: MealPlannerPresenterProtocol? { get set }
     
-    func loadMealPlan()
-}
-
-class MealPlannerInteractor: MealPlannerInteractorProtocol {
-    var presenter: MealPlannerPresenterProtocol?
-    private let worker: MealPlannerWorkerProtocol
-    
-    init(worker: MealPlannerWorkerProtocol = MealPlannerWorker()) {
-        self.worker = worker
+    // MARK: - Business Logic Functions
+    func autoGenerateWeekPlan() {
+        // Implementation for auto-generating week meal plan
     }
     
-    func loadMealPlan() {
-        Task {
-            do {
-                let mealPlan = try await worker.fetchMealPlan()
-                await presenter?.presentMealPlan(mealPlan)
-            } catch {
-                await presenter?.presentError(error.localizedDescription)
-            }
-        }
-    }
-}
-
-@MainActor
-protocol MealPlannerPresenterProtocol {
-    var viewModel: MealPlannerViewModel? { get set }
-    
-    func presentMealPlan(_ mealPlan: MealPlan) async
-    func presentError(_ message: String) async
-}
-
-@MainActor
-class MealPlannerPresenter: MealPlannerPresenterProtocol {
-    weak var viewModel: MealPlannerViewModel?
-    
-    func presentMealPlan(_ mealPlan: MealPlan) async {
-        viewModel?.isLoading = false
-        // Meal plan is managed by AppState
+    func addWeekToShopping() {
+        // Implementation for adding week's meals to shopping list
     }
     
-    func presentError(_ message: String) async {
-        viewModel?.isLoading = false
-        viewModel?.errorMessage = message
+    func showMealPrepGuide() {
+        // Implementation for showing meal prep guide
     }
-}
-
-protocol MealPlannerWorkerProtocol {
-    func fetchMealPlan() async throws -> MealPlan
-}
-
-class MealPlannerWorker: MealPlannerWorkerProtocol {
-    @MainActor
-    func fetchMealPlan() async throws -> MealPlan {
-        // Simulate API call
-        try await Task.sleep(nanoseconds: 400_000_000) // 0.4 seconds
-        
-        return AppState.shared.mealPlan
+    
+    func showNutritionGoals() {
+        // Implementation for showing nutrition goals
     }
 }

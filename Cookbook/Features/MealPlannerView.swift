@@ -448,51 +448,6 @@ struct RecipeSelectorView: View {
     }
 }
 
-@MainActor
-@Observable
-class MealPlannerViewModel {
-    private let interactor: MealPlannerInteractorProtocol
-    private let router: MealPlannerRouterProtocol
-    
-    init(interactor: MealPlannerInteractorProtocol, router: MealPlannerRouterProtocol) {
-        self.interactor = interactor
-        self.router = router
-    }
-    
-    func autoGenerateWeekPlan() {
-        // Implementation for auto-generating week meal plan
-    }
-    
-    func addWeekToShopping() {
-        // Implementation for adding week's meals to shopping list
-    }
-    
-    func showMealPrepGuide() {
-        // Implementation for showing meal prep guide
-    }
-    
-    func showNutritionGoals() {
-        // Implementation for showing nutrition goals
-    }
-}
-
-protocol MealPlannerInteractorProtocol {
-    var presenter: MealPlannerPresenterProtocol? { get set }
-}
-
-class MealPlannerInteractor: MealPlannerInteractorProtocol {
-    var presenter: MealPlannerPresenterProtocol?
-}
-
-@MainActor
-protocol MealPlannerPresenterProtocol {
-    var viewModel: MealPlannerViewModel? { get set }
-}
-
-class MealPlannerPresenter: MealPlannerPresenterProtocol {
-    weak var viewModel: MealPlannerViewModel?
-}
-
 #Preview {
     let interactor = MealPlannerInteractor()
     let presenter = MealPlannerPresenter()

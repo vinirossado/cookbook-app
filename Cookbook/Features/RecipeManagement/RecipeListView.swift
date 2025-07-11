@@ -365,8 +365,7 @@ struct RecipeCard: View {
             // Recipe Image with overlay buttons
             ZStack(alignment: .topTrailing) {
                 RecipeImageView(
-                    imageUrl: recipe.images.first ?? "placeholder"!,
-//                    imageName: recipe.images.first ?? "placeholder",
+                    imageUrl: recipe.images.first?.url ?? "placeholder",
                     height: 120
                 )
                 

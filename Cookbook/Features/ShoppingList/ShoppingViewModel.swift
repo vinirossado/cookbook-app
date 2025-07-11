@@ -30,68 +30,39 @@ class ShoppingViewModel {
     func shareShoppingList() {
         router.shareShoppingList()
     }
-}
-
-// MARK: - VIP Protocol Implementations
-protocol ShoppingInteractorProtocol {
-    var presenter: ShoppingPresenterProtocol? { get set }
     
-    func loadShoppingCart()
-}
-
-class ShoppingInteractor: ShoppingInteractorProtocol {
-    var presenter: ShoppingPresenterProtocol?
-    private let worker: ShoppingWorkerProtocol
-    
-    init(worker: ShoppingWorkerProtocol = ShoppingWorker()) {
-        self.worker = worker
+    // MARK: - Business Logic Functions
+    func clearCompleted() {
+        AppState.shared.clearCompletedShoppingItems()
     }
     
-    func loadShoppingCart() {
-        Task {
-            do {
-                let cart = try await worker.fetchShoppingCart()
-                await presenter?.presentShoppingCart(cart)
-            } catch {
-                await presenter?.presentError(error.localizedDescription)
-            }
-        }
-    }
-}
-
-@MainActor
-protocol ShoppingPresenterProtocol {
-    var viewModel: ShoppingViewModel? { get set }
-    
-    func presentShoppingCart(_ cart: ShoppingCart) async
-    func presentError(_ message: String) async
-}
-
-@MainActor
-class ShoppingPresenter: ShoppingPresenterProtocol {
-    weak var viewModel: ShoppingViewModel?
-    
-    func presentShoppingCart(_ cart: ShoppingCart) async {
-        viewModel?.isLoading = false
-        // Shopping cart is managed by AppState
+    func clearAll() {
+        AppState.shared.clearShoppingCart()
     }
     
-    func presentError(_ message: String) async {
-        viewModel?.isLoading = false
-        viewModel?.errorMessage = message
+    func addFromRecentRecipes() {
+        // Implementation to add ingredients from recently viewed recipes
     }
-}
-
-protocol ShoppingWorkerProtocol {
-    func fetchShoppingCart() async throws -> ShoppingCart
-}
-
-class ShoppingWorker: ShoppingWorkerProtocol {
-    @MainActor
-    func fetchShoppingCart() async throws -> ShoppingCart {
-        // Simulate API call
-        try await Task.sleep(nanoseconds: 300_000_000) // 0.3 seconds
+    
+    func suggestFromMealPlan() {
+        // Implementation to suggest ingredients based on meal plan
+    }
+    
+    func generateShoppingListText() -> String {
+        let cart = AppState.shared.shoppingCart
+        var text = "🛒 Shopping List\n\n"
         
-        return AppState.shared.shoppingCart
+        let grouped = Dictionary(grouping: cart.items) { $0.ingredient.category }
+        
+        for category in grouped.keys.sorted(by: { $0.rawValue < $1.rawValue }) {
+            text += "\(category.rawValue):\n"
+            for item in grouped[category] ?? [] {
+                let checkbox = item.isCompleted ? "☑️" : "☐"
+                text += "\(checkbox) \(item.ingredient.displayText)\n"
+            }
+            text += "\n"
+        }
+        
+        return text
     }
 }
