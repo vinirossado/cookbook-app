@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Foundation
 
 struct RecipeDetailView: View {
     let recipe: Recipe
@@ -97,10 +98,10 @@ struct RecipeDetailView: View {
                             // Haptic feedback
                             let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
                             impactFeedback.impactOccurred()
-                            
+                                                        
                             // Show toast
                             showToast(
-                                message: "Added \(recipe.ingredients.count) ingredients to cart",
+                                message: "Added \(viewModel.uncheckedIngredientsAmount) ingredients to cart",
                                 icon: "cart.fill"
                             )
                         }
@@ -205,6 +206,25 @@ struct RecipeDetailView: View {
                         .font(CookBookFonts.caption1)
                         .foregroundColor(CookBookColors.textSecondary)
                 }
+                
+                // Country of Origin
+                HStack(spacing: 8) {
+                    Text(recipe.countryOfOrigin.flag)
+                        .font(.title2)
+                    
+                    Text(recipe.countryOfOrigin.rawValue)
+                        .font(CookBookFonts.caption1)
+                        .fontWeight(.medium)
+                        .foregroundColor(CookBookColors.textSecondary)
+                    
+                    Text("•")
+                        .font(CookBookFonts.caption1)
+                        .foregroundColor(CookBookColors.textSecondary)
+                    
+                    Text(recipe.countryOfOrigin.regionDescription)
+                        .font(CookBookFonts.caption1)
+                        .foregroundColor(CookBookColors.textSecondary)
+                }
             }
             
             // Quick Stats
@@ -212,7 +232,7 @@ struct RecipeDetailView: View {
                 quickStatItem(
                     icon: "clock",
                     title: "Cook Time",
-                    value: "\(recipe.cookingTime)m"
+                    value: formatTime(recipe.cookingTime)
                 )
                 
                 quickStatItem(
@@ -293,8 +313,8 @@ struct RecipeDetailView: View {
                 ], spacing: 12) {
                     detailItem(title: "Category", value: recipe.category.rawValue)
                     detailItem(title: "Cuisine", value: recipe.category.rawValue)
-                    detailItem(title: "Prep Time", value: "\(recipe.prepTime) min")
-                    detailItem(title: "Total Time", value: "\(recipe.totalTime) min")
+                    detailItem(title: "Prep Time", value: formatTime(recipe.prepTime))
+                    detailItem(title: "Total Time", value: formatTime(recipe.totalTime))
                 }
             }
             
@@ -357,7 +377,7 @@ struct RecipeDetailView: View {
                 }
             }
             
-            Button("Add All to Shopping List") {
+            Button("Add ingredients to Shopping List") {
                 viewModel.addIngredientsToShoppingList()
                 
                 // Haptic feedback
@@ -366,7 +386,7 @@ struct RecipeDetailView: View {
                 
                 // Show toast
                 showToast(
-                    message: "Added \(viewModel.adjustedIngredients.count) ingredients to cart",
+                    message: "Added \(viewModel.uncheckedIngredientsAmount) ingredients to cart",
                     icon: "cart.fill"
                 )
             }
@@ -513,6 +533,23 @@ struct RecipeDetailView: View {
     
     private func calculateDailyValue(_ amount: Double, recommendedDaily: Double) -> Int {
         return Int((amount / recommendedDaily) * 100)
+    }
+    
+    private func formatTime(_ minutes: Double) -> String {
+        let totalMinutes = Int(minutes)
+        
+        if totalMinutes < 60 {
+            return "\(totalMinutes) min"
+        } else {
+            let hours = totalMinutes / 60
+            let remainingMinutes = totalMinutes % 60
+            
+            if remainingMinutes == 0 {
+                return hours == 1 ? "1 hour" : "\(hours) hours"
+            } else {
+                return hours == 1 ? "1 hour \(remainingMinutes) min" : "\(hours) hours \(remainingMinutes) min"
+            }
+        }
     }
     
     // MARK: - Helper Methods
@@ -797,7 +834,11 @@ struct FlowLayout: Layout {
         router: router
     )
     
-    NavigationView {
+    // Wire VIP dependencies
+    interactor.presenter = presenter
+    presenter.viewModel = viewModel
+    
+    return NavigationView {
         RecipeDetailView(
             recipe: MockDataProvider.generateMockRecipes()[0],
             viewModel: viewModel

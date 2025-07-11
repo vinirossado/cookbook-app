@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+@MainActor
 protocol RecipeRouterProtocol {
     func navigateToRecipeDetail(recipe: Recipe)
     func navigateToAddRecipe()
@@ -57,6 +58,7 @@ class RecipeRouter: RecipeRouterProtocol {
 }
 
 // MARK: - Shopping Router
+@MainActor
 protocol ShoppingRouterProtocol {
     func navigateToRecipeDetail(recipeId: UUID)
     func shareShoppingList()
@@ -92,6 +94,7 @@ class ShoppingRouter: ShoppingRouterProtocol {
 }
 
 // MARK: - Meal Planner Router
+@MainActor
 protocol MealPlannerRouterProtocol {
     func navigateToRecipeSelection()
     func navigateToMealDetail(meal: PlannedMeal)

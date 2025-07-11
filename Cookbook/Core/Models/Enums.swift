@@ -8,6 +8,320 @@
 import Foundation
 import SwiftUI
 
+// MARK: - Country Origin
+enum Country: String, CaseIterable, Codable, Hashable {
+    // Europe
+    case italy = "Italy"
+    case france = "France"
+    case spain = "Spain"
+    case greece = "Greece"
+    case germany = "Germany"
+    case unitedKingdom = "United Kingdom"
+    case portugal = "Portugal"
+    case netherlands = "Netherlands"
+    case switzerland = "Switzerland"
+    case austria = "Austria"
+    case poland = "Poland"
+    case russia = "Russia"
+    case sweden = "Sweden"
+    case norway = "Norway"
+    case denmark = "Denmark"
+    case finland = "Finland"
+    case belgium = "Belgium"
+    case ireland = "Ireland"
+    
+    // Asia
+    case china = "China"
+    case japan = "Japan"
+    case southKorea = "South Korea"
+    case thailand = "Thailand"
+    case vietnam = "Vietnam"
+    case india = "India"
+    case philippines = "Philippines"
+    case indonesia = "Indonesia"
+    case malaysia = "Malaysia"
+    case singapore = "Singapore"
+    case taiwan = "Taiwan"
+    case mongolia = "Mongolia"
+    case myanmar = "Myanmar"
+    case cambodia = "Cambodia"
+    case laos = "Laos"
+    case nepal = "Nepal"
+    case sriLanka = "Sri Lanka"
+    case bangladesh = "Bangladesh"
+    case pakistan = "Pakistan"
+    case afghanistan = "Afghanistan"
+    
+    // Middle East & North Africa
+    case turkey = "Turkey"
+    case iran = "Iran"
+    case lebanon = "Lebanon"
+    case syria = "Syria"
+    case israel = "Israel"
+    case palestine = "Palestine"
+    case jordan = "Jordan"
+    case egypt = "Egypt"
+    case morocco = "Morocco"
+    case tunisia = "Tunisia"
+    case algeria = "Algeria"
+    case libya = "Libya"
+    case sudan = "Sudan"
+    case ethiopia = "Ethiopia"
+    case saudiArabia = "Saudi Arabia"
+    case uae = "UAE"
+    case iraq = "Iraq"
+    
+    // Americas
+    case unitedStates = "United States"
+    case canada = "Canada"
+    case mexico = "Mexico"
+    case brazil = "Brazil"
+    case argentina = "Argentina"
+    case chile = "Chile"
+    case peru = "Peru"
+    case colombia = "Colombia"
+    case venezuela = "Venezuela"
+    case ecuador = "Ecuador"
+    case bolivia = "Bolivia"
+    case uruguay = "Uruguay"
+    case paraguay = "Paraguay"
+    case guatemala = "Guatemala"
+    case honduras = "Honduras"
+    case nicaragua = "Nicaragua"
+    case costaRica = "Costa Rica"
+    case panama = "Panama"
+    case cuba = "Cuba"
+    case haiti = "Haiti"
+    case dominicanRepublic = "Dominican Republic"
+    case jamaica = "Jamaica"
+    case puertoRico = "Puerto Rico"
+    
+    // Africa
+    case southAfrica = "South Africa"
+    case nigeria = "Nigeria"
+    case kenya = "Kenya"
+    case ghana = "Ghana"
+    case senegal = "Senegal"
+    case ivoryCoast = "Ivory Coast"
+    case cameroon = "Cameroon"
+    case uganda = "Uganda"
+    case tanzania = "Tanzania"
+    case zimbabwe = "Zimbabwe"
+    case botswana = "Botswana"
+    case zambia = "Zambia"
+    case malawi = "Malawi"
+    case mozambique = "Mozambique"
+    case madagascar = "Madagascar"
+    
+    // Oceania
+    case australia = "Australia"
+    case newZealand = "New Zealand"
+    case fiji = "Fiji"
+    case samoa = "Samoa"
+    case tonga = "Tonga"
+    case vanuatu = "Vanuatu"
+    case papuaNewGuinea = "Papua New Guinea"
+    
+    // Caribbean & Central America
+    case barbados = "Barbados"
+    case trinidad = "Trinidad and Tobago"
+    case bahamas = "Bahamas"
+    case belize = "Belize"
+    case guyana = "Guyana"
+    case suriname = "Suriname"
+    
+    var flag: String {
+        switch self {
+        // Europe
+        case .italy: return "🇮🇹"
+        case .france: return "🇫🇷"
+        case .spain: return "🇪🇸"
+        case .greece: return "🇬🇷"
+        case .germany: return "🇩🇪"
+        case .unitedKingdom: return "🇬🇧"
+        case .portugal: return "🇵🇹"
+        case .netherlands: return "🇳🇱"
+        case .switzerland: return "🇨🇭"
+        case .austria: return "🇦🇹"
+        case .poland: return "🇵🇱"
+        case .russia: return "🇷🇺"
+        case .sweden: return "🇸🇪"
+        case .norway: return "🇳🇴"
+        case .denmark: return "🇩🇰"
+        case .finland: return "🇫🇮"
+        case .belgium: return "🇧🇪"
+        case .ireland: return "🇮🇪"
+        
+        // Asia
+        case .china: return "🇨🇳"
+        case .japan: return "🇯🇵"
+        case .southKorea: return "🇰🇷"
+        case .thailand: return "🇹🇭"
+        case .vietnam: return "🇻🇳"
+        case .india: return "🇮🇳"
+        case .philippines: return "🇵🇭"
+        case .indonesia: return "🇮🇩"
+        case .malaysia: return "🇲🇾"
+        case .singapore: return "🇸🇬"
+        case .taiwan: return "🇹🇼"
+        case .mongolia: return "🇲🇳"
+        case .myanmar: return "🇲🇲"
+        case .cambodia: return "🇰🇭"
+        case .laos: return "🇱🇦"
+        case .nepal: return "🇳🇵"
+        case .sriLanka: return "🇱🇰"
+        case .bangladesh: return "🇧🇩"
+        case .pakistan: return "🇵🇰"
+        case .afghanistan: return "🇦🇫"
+        
+        // Middle East & North Africa
+        case .turkey: return "🇹🇷"
+        case .iran: return "🇮🇷"
+        case .lebanon: return "🇱🇧"
+        case .syria: return "🇸🇾"
+        case .israel: return "🇮🇱"
+        case .palestine: return "🇵🇸"
+        case .jordan: return "🇯🇴"
+        case .egypt: return "🇪🇬"
+        case .morocco: return "🇲🇦"
+        case .tunisia: return "🇹🇳"
+        case .algeria: return "🇩🇿"
+        case .libya: return "🇱🇾"
+        case .sudan: return "🇸🇩"
+        case .ethiopia: return "🇪🇹"
+        case .saudiArabia: return "🇸🇦"
+        case .uae: return "🇦🇪"
+        case .iraq: return "🇮🇶"
+        
+        // Americas
+        case .unitedStates: return "🇺🇸"
+        case .canada: return "🇨🇦"
+        case .mexico: return "🇲🇽"
+        case .brazil: return "🇧🇷"
+        case .argentina: return "🇦🇷"
+        case .chile: return "🇨🇱"
+        case .peru: return "🇵🇪"
+        case .colombia: return "🇨🇴"
+        case .venezuela: return "🇻🇪"
+        case .ecuador: return "🇪🇨"
+        case .bolivia: return "🇧🇴"
+        case .uruguay: return "🇺🇾"
+        case .paraguay: return "🇵🇾"
+        case .guatemala: return "🇬🇹"
+        case .honduras: return "🇭🇳"
+        case .nicaragua: return "🇳🇮"
+        case .costaRica: return "🇨🇷"
+        case .panama: return "🇵🇦"
+        case .cuba: return "🇨🇺"
+        case .haiti: return "🇭🇹"
+        case .dominicanRepublic: return "🇩🇴"
+        case .jamaica: return "🇯🇲"
+        case .puertoRico: return "🇵🇷"
+        
+        // Africa
+        case .southAfrica: return "🇿🇦"
+        case .nigeria: return "🇳🇬"
+        case .kenya: return "🇰🇪"
+        case .ghana: return "🇬🇭"
+        case .senegal: return "🇸🇳"
+        case .ivoryCoast: return "🇨🇮"
+        case .cameroon: return "🇨🇲"
+        case .uganda: return "🇺🇬"
+        case .tanzania: return "🇹🇿"
+        case .zimbabwe: return "🇿🇼"
+        case .botswana: return "🇧🇼"
+        case .zambia: return "🇿🇲"
+        case .malawi: return "🇲🇼"
+        case .mozambique: return "🇲🇿"
+        case .madagascar: return "🇲🇬"
+        
+        // Oceania
+        case .australia: return "🇦🇺"
+        case .newZealand: return "🇳🇿"
+        case .fiji: return "🇫🇯"
+        case .samoa: return "🇼🇸"
+        case .tonga: return "🇹🇴"
+        case .vanuatu: return "🇻🇺"
+        case .papuaNewGuinea: return "🇵🇬"
+        
+        // Caribbean & Central America
+        case .barbados: return "🇧🇧"
+        case .trinidad: return "🇹🇹"
+        case .bahamas: return "🇧🇸"
+        case .belize: return "🇧🇿"
+        case .guyana: return "🇬🇾"
+        case .suriname: return "🇸🇷"
+        }
+    }
+    
+    var continent: Continent {
+        switch self {
+        case .italy, .france, .spain, .greece, .germany, .unitedKingdom, .portugal, .netherlands, .switzerland, .austria, .poland, .russia, .sweden, .norway, .denmark, .finland, .belgium, .ireland:
+            return .europe
+        case .china, .japan, .southKorea, .thailand, .vietnam, .india, .philippines, .indonesia, .malaysia, .singapore, .taiwan, .mongolia, .myanmar, .cambodia, .laos, .nepal, .sriLanka, .bangladesh, .pakistan, .afghanistan:
+            return .asia
+        case .turkey, .iran, .lebanon, .syria, .israel, .palestine, .jordan, .egypt, .morocco, .tunisia, .algeria, .libya, .sudan, .ethiopia, .saudiArabia, .uae, .iraq:
+            return .middleEastNorthAfrica
+        case .unitedStates, .canada, .mexico, .brazil, .argentina, .chile, .peru, .colombia, .venezuela, .ecuador, .bolivia, .uruguay, .paraguay, .guatemala, .honduras, .nicaragua, .costaRica, .panama, .cuba, .haiti, .dominicanRepublic, .jamaica, .puertoRico, .barbados, .trinidad, .bahamas, .belize, .guyana, .suriname:
+            return .americas
+        case .southAfrica, .nigeria, .kenya, .ghana, .senegal, .ivoryCoast, .cameroon, .uganda, .tanzania, .zimbabwe, .botswana, .zambia, .malawi, .mozambique, .madagascar:
+            return .africa
+        case .australia, .newZealand, .fiji, .samoa, .tonga, .vanuatu, .papuaNewGuinea:
+            return .oceania
+        }
+    }
+    
+    var regionDescription: String {
+        switch continent {
+        case .europe: return "European Cuisine"
+        case .asia: return "Asian Cuisine"
+        case .middleEastNorthAfrica: return "Middle Eastern & North African Cuisine"
+        case .americas: return "American Cuisine"
+        case .africa: return "African Cuisine"
+        case .oceania: return "Oceanic Cuisine"
+        }
+    }
+    
+    var displayText: String {
+        return "\(flag) \(rawValue)"
+    }
+}
+
+enum Continent: String, CaseIterable, Codable, Hashable {
+    case europe = "Europe"
+    case asia = "Asia"
+    case middleEastNorthAfrica = "Middle East & North Africa"
+    case americas = "Americas"
+    case africa = "Africa"
+    case oceania = "Oceania"
+    
+    var countries: [Country] {
+        return Country.allCases.filter { $0.continent == self }
+    }
+    
+    var icon: String {
+        switch self {
+        case .europe: return "building.columns"
+        case .asia: return "mountain.2"
+        case .middleEastNorthAfrica: return "moon.stars"
+        case .americas: return "leaf"
+        case .africa: return "sun.max"
+        case .oceania: return "water.waves"
+        }
+    }
+    
+    var color: Color {
+        switch self {
+        case .europe: return .blue
+        case .asia: return .orange
+        case .middleEastNorthAfrica: return .purple
+        case .americas: return .green
+        case .africa: return .yellow
+        case .oceania: return .cyan
+        }
+    }
+}
+
 // MARK: - Recipe Enums
 enum RecipeCategory: String, CaseIterable, Codable, Hashable {
     case breakfast = "Breakfast"
@@ -414,6 +728,8 @@ enum FilterOption: String, CaseIterable {
     case vegetarian = "Vegetarian"
     case vegan = "Vegan"
     case glutenFree = "Gluten Free"
+    case byCountry = "By Country"
+    case byContinent = "By Continent"
     
     var icon: String {
         switch self {
@@ -425,28 +741,30 @@ enum FilterOption: String, CaseIterable {
         case .vegetarian: return "leaf.circle"
         case .vegan: return "leaf.circle.fill"
         case .glutenFree: return "g.circle.fill"
+        case .byCountry: return "flag"
+        case .byContinent: return "globe"
         }
     }
 }
 
 // MARK: - Time Extension
 extension TimeInterval {
-//    static func formatTime(_ interval: TimeInterval) -> String {
-//        let hours = Int(interval) / 3600
-//        let minutes = Int(interval) % 3600 / 60
-//        
-//        if hours > 0 {
-//            if minutes > 0 {
-//                return "\(hours)h \(minutes)m"
-//            } else {
-//                return "\(hours)h"
-//            }
-//        } else if minutes > 0 {
-//            return "\(minutes)m"
-//        } else {
-//            return "< 1m"
-//        }
-//    }
+    static func formatTime(_ interval: TimeInterval) -> String {
+        let totalMinutes = Int(interval / 60) // Convert seconds to minutes
+        
+        if totalMinutes < 60 {
+            return "\(totalMinutes) min"
+        } else {
+            let hours = totalMinutes / 60
+            let remainingMinutes = totalMinutes % 60
+            
+            if remainingMinutes == 0 {
+                return hours == 1 ? "1 hour" : "\(hours) hours"
+            } else {
+                return hours == 1 ? "1 hour \(remainingMinutes) min" : "\(hours) hours \(remainingMinutes) min"
+            }
+        }
+    }
     
     var hours: Int {
         return Int(self) / 3600

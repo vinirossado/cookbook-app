@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+@MainActor
 protocol TodayRouterProtocol {
     func navigateToRecipeDetail(_ recipe: Recipe)
     func navigateToCookingMode(_ recipe: Recipe)

@@ -129,7 +129,14 @@ class AuthenticationWorker: AuthenticationWorkerProtocol {
                     throw AuthenticationError.unknownError
                 case .unknown:
                     throw AuthenticationError.unknownError
-               
+                case .notInteractive:
+                    throw AuthenticationError.unknownError
+                case .matchedExcludedCredential:
+                    throw AuthenticationError.unknownError
+                case .credentialImport:
+                    throw AuthenticationError.unknownError
+                case .credentialExport:
+                    throw AuthenticationError.unknownError
                 @unknown default:
                     throw AuthenticationError.unknownError
                 }

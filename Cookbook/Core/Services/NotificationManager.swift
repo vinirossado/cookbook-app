@@ -143,19 +143,23 @@ class NotificationManager: NSObject, ObservableObject {
     }
     
     // MARK: - Cross-Device Notifications
-    func sendWantTodayNotification(meal: PlannedMeal) {
+    @MainActor func sendWantTodayNotification(meal: PlannedMeal) {
         // In a real app, this would send a push notification to family members
         // For now, we'll simulate with a local notification
+        
+        // Get the current user's name from AppState
+        let userName = AppState.shared.currentUser?.name ?? "Someone"
         
         scheduleLocalNotification(
             id: "want_today_\(meal.id.uuidString)",
             title: "Family Meal Request",
-            body: "Someone wants to cook \(meal.recipeName) today!",
+            body: "\(userName) wants to cook \(meal.recipeName) today!",
             timeInterval: 1, // Immediate notification
             userInfo: [
                 "type": "want_today",
                 "mealId": meal.id.uuidString,
-                "recipeName": meal.recipeName
+                "recipeName": meal.recipeName,
+                "requestedBy": userName
             ]
         )
         

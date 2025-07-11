@@ -274,7 +274,7 @@ struct WatchRecipeRow: View {
                         .lineLimit(2)
                     
                     HStack {
-                        Text("\(recipe.cookingTime) min")
+                        Text(formatTime(recipe.cookingTime))
                             .font(.caption2)
                             .foregroundColor(.secondary)
                         
@@ -408,6 +408,23 @@ struct WatchTimer: Codable {
     
     var timeRemaining: TimeInterval {
         return endTime.timeIntervalSinceNow
+    }
+    
+    private func formatTime(_ minutes: Double) -> String {
+        let totalMinutes = Int(minutes)
+        
+        if totalMinutes < 60 {
+            return "\(totalMinutes) min"
+        } else {
+            let hours = totalMinutes / 60
+            let remainingMinutes = totalMinutes % 60
+            
+            if remainingMinutes == 0 {
+                return hours == 1 ? "1 hour" : "\(hours) hours"
+            } else {
+                return hours == 1 ? "1 hour \(remainingMinutes) min" : "\(hours) hours \(remainingMinutes) min"
+            }
+        }
     }
 }
 

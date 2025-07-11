@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Foundation
 
 struct RecipeListView: View {
     @State private var viewModel: RecipeListViewModel
@@ -26,13 +27,10 @@ struct RecipeListView: View {
     
     var body: some View {
         ScrollView {
-            LazyVStack(spacing: 20) {
+            VStack(spacing: 16) {
                 // Search Bar
                 searchSection
                     .padding(.top, 16)
-                
-                // Category Filters
-                categoryFilterSection
                 
                 // Quick Filters
                 quickFiltersSection
@@ -40,7 +38,6 @@ struct RecipeListView: View {
                 // Recipes Grid
                 recipesSection
             }
-            
             .padding(.bottom, 20)
         }
         .navigationTitle("Recipes")
@@ -80,15 +77,8 @@ struct RecipeListView: View {
         .sheet(isPresented: $showingFilters) {
             FiltersView()
         }
-        .onAppear {
-            viewModel.loadRecipes()
-        }
         .navigationDestination(item: $selectedRecipe) { recipe in
-            print("🧭 NavigationDestination triggered for recipe: \(recipe.title)")
-            print("🏗️ Creating RecipeDetailView module...")
-            let module = RecipeDetailRouter.createModule(for: recipe)
-            print("✅ Module created successfully")
-            return module
+            RecipeDetailRouter.createModule(for: recipe)
         }
         .overlay(
             // Toast notification
@@ -131,6 +121,19 @@ struct RecipeListView: View {
                     .fill(CookBookColors.surface)
             )
             
+            // Clear All Filters Button
+            if hasActiveFilters {
+                Button(action: clearAllFilters) {
+                    Image(systemName: "xmark.circle")
+                        .foregroundColor(CookBookColors.accent)
+                        .frame(width: 44, height: 44)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(CookBookColors.surface)
+                        )
+                }
+            }
+            
             Button(action: { showingFilters = true }) {
                 Image(systemName: "slider.horizontal.3")
                     .foregroundColor(CookBookColors.primary)
@@ -144,26 +147,72 @@ struct RecipeListView: View {
         .padding(.horizontal, 16)
     }
     
-    private var categoryFilterSection: some View {
+    private var quickFiltersSection: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 12) {
+                // Country filter button
+                Button(action: { showingFilters = true }) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "flag")
+                            .font(.caption)
+                        
+                        if let selectedCountry = appState.selectedCountry {
+                            Text(selectedCountry.flag)
+                                .font(.caption)
+                            Text(selectedCountry.rawValue)
+                                .font(CookBookFonts.caption1)
+                                .fontWeight(.medium)
+                        } else if let selectedContinent = appState.selectedContinent {
+                            Image(systemName: selectedContinent.icon)
+                                .font(.caption)
+                            Text(selectedContinent.rawValue)
+                                .font(CookBookFonts.caption1)
+                                .fontWeight(.medium)
+                        } else {
+                            Text("By Country")
+                                .font(CookBookFonts.caption1)
+                                .fontWeight(.medium)
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background(
+                        RoundedRectangle(cornerRadius: 20)
+                            .fill(appState.countryFilterEnabled ? CookBookColors.primary : CookBookColors.surface)
+                    )
+                    .foregroundColor(appState.countryFilterEnabled ? .white : CookBookColors.text)
+                }
+                
+                // Category filter buttons
                 ForEach(RecipeCategory.allCases, id: \.self) { category in
                     CategoryFilterChip(
                         category: category,
                         isSelected: appState.selectedCategory == category
                     ) {
-                        appState.selectedCategory = appState.selectedCategory == category ? nil : category
+                        if appState.selectedCategory == category {
+                            appState.selectedCategory = nil
+                        } else {
+                            appState.selectedCategory = category
+                        }
                     }
                 }
-            }
-            .padding(.horizontal, 16)
-        }
-    }
-    
-    private var quickFiltersSection: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 12) {
-                ForEach(FilterOption.allCases, id: \.self) { filter in
+                
+                // Difficulty filter buttons
+                ForEach(DifficultyLevel.allCases, id: \.self) { difficulty in
+                    DifficultyFilterChip(
+                        difficulty: difficulty,
+                        isSelected: appState.selectedDifficulty == difficulty
+                    ) {
+                        if appState.selectedDifficulty == difficulty {
+                            appState.selectedDifficulty = nil
+                        } else {
+                            appState.selectedDifficulty = difficulty
+                        }
+                    }
+                }
+                
+                // Other quick filter options
+                ForEach(FilterOption.allCases.filter { $0 != .byCountry && $0 != .byContinent }, id: \.self) { filter in
                     QuickFilterChip(
                         filter: filter,
                         isSelected: appState.filterOptions.contains(filter)
@@ -226,36 +275,17 @@ struct RecipeListView: View {
                         
                         // Show toast
                         showToast(
-                            message: "Added to today's meal plan",
+                            message: "Added to Want Today",
                             icon: "clock.fill"
                         )
-                    },
-                    onAddToShoppingCart: {
-                        print("🛒 Add to shopping cart for recipe: \(recipe.title)")
                         
-                        // Add recipe ingredients to shopping cart
-                        appState.addRecipeToShoppingCart(recipe)
-                        
-                        // Haptic feedback
-                        let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
-                        impactFeedback.impactOccurred()
-                        
-                        // Show toast
-                        showToast(
-                            message: "Added \(recipe.ingredients.count) ingredients to cart",
-                            icon: "cart.fill"
-                        )
-                    },
-                    onTap: {
-                        print("🔍 Recipe card tapped: \(recipe.title)")
-                        print("📱 Setting selectedRecipe to: \(recipe.title)")
-                        
-                        // Visual feedback for card tap
+                        // Mark as recently tapped for visual feedback
                         recentlyTappedCards.insert(recipe.id)
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
                             recentlyTappedCards.remove(recipe.id)
                         }
-                        
+                    },
+                    onTap: {
                         // Haptic feedback
                         let impactFeedback = UIImpactFeedbackGenerator(style: .light)
                         impactFeedback.impactOccurred()
@@ -272,14 +302,29 @@ struct RecipeListView: View {
     }
     
     private var filteredRecipes: [Recipe] {
-        return viewModel.filteredRecipes(
-            searchText: appState.searchText,
-            category: appState.selectedCategory,
-            filters: appState.filterOptions
-        )
+        return appState.filteredRecipes()
+    }
+    
+    private var hasActiveFilters: Bool {
+        return !appState.searchText.isEmpty ||
+               appState.selectedCategory != nil ||
+               appState.selectedDifficulty != nil ||
+               !appState.filterOptions.isEmpty ||
+               appState.countryFilterEnabled
     }
     
     // MARK: - Helper Methods
+    private func clearAllFilters() {
+        appState.searchText = ""
+        appState.selectedCategory = nil
+        appState.selectedDifficulty = nil
+        appState.filterOptions.removeAll()
+        appState.clearCountryFilters()
+        
+        // Show feedback
+        showToast(message: "All filters cleared", icon: "xmark.circle")
+    }
+    
     private func showToast(message: String, icon: String) {
         toastMessage = message
         toastIcon = icon
@@ -296,96 +341,37 @@ struct RecipeListView: View {
     }
 }
 
-struct CategoryFilterChip: View {
-    let category: RecipeCategory
-    let isSelected: Bool
-    let action: () -> Void
-    
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 8) {
-                Image(systemName: category.icon)
-                    .font(.caption)
-                
-                Text(category.rawValue)
-                    .font(CookBookFonts.caption1)
-                    .fontWeight(.medium)
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
-            .background(
-                RoundedRectangle(cornerRadius: 20)
-                    .fill(isSelected ? category.color : CookBookColors.surface)
-            )
-            .foregroundColor(isSelected ? .white : CookBookColors.text)
-        }
-    }
-}
-
-struct QuickFilterChip: View {
-    let filter: FilterOption
-    let isSelected: Bool
-    let action: () -> Void
-    
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 6) {
-                Image(systemName: filter.icon)
-                    .font(.caption)
-                
-                Text(filter.rawValue)
-                    .font(CookBookFonts.caption2)
-                    .fontWeight(.medium)
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
-            .background(
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(isSelected ? CookBookColors.primary : CookBookColors.surface)
-            )
-            .foregroundColor(isSelected ? .white : CookBookColors.textSecondary)
-        }
-    }
-}
-
+// MARK: - Recipe Card Component
 struct RecipeCard: View {
     let recipe: Recipe
     let onFavoriteToggle: () -> Void
     let onWantToday: () -> Void
-    let onAddToShoppingCart: () -> Void
     let onTap: () -> Void
     let isRecentlyTapped: Bool
-    @Environment(AppState.self) private var appState
+    
+    @State private var isFavorite: Bool
+    
+    init(recipe: Recipe, onFavoriteToggle: @escaping () -> Void, onWantToday: @escaping () -> Void, onTap: @escaping () -> Void, isRecentlyTapped: Bool = false) {
+        self.recipe = recipe
+        self.onFavoriteToggle = onFavoriteToggle
+        self.onWantToday = onWantToday
+        self.onTap = onTap
+        self.isRecentlyTapped = isRecentlyTapped
+        self._isFavorite = State(initialValue: recipe.isFavorite)
+    }
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            // Recipe Image
+        VStack(alignment: .leading, spacing: 0) {
+            // Recipe Image with overlay buttons
             ZStack(alignment: .topTrailing) {
                 RecipeImageView(
-                    imageUrl: recipe.images.first?.url ?? "photo",
-                    height: 110,
-                    cornerRadius: 12
+                    imageUrl: recipe.images.first ?? "placeholder"!,
+//                    imageName: recipe.images.first ?? "placeholder",
+                    height: 120
                 )
-                .clipped()
-                .frame(height: 110)
                 
-                // Action Buttons
-                HStack(spacing: 4) {
-                    // Shopping Cart Button
-                    Button(action: {
-                        onAddToShoppingCart()
-                    }) {
-                        Image(systemName: "cart.fill")
-                            .foregroundColor(.white)
-                            .font(.system(size: 11, weight: .medium))
-                            .frame(width: 24, height: 24)
-                            .background(
-                                Circle()
-                                    .fill(CookBookColors.accent.opacity(0.8))
-                                    .background(Circle().fill(.ultraThinMaterial))
-                            )
-                    }
-                    
+                // Overlay buttons
+                HStack(spacing: 8) {
                     // Want Today Button
                     Button(action: {
                         onWantToday()
@@ -431,6 +417,10 @@ struct RecipeCard: View {
                 
                 // Recipe Meta
                 HStack(spacing: 4) {
+                    // Country flag
+                    Text(recipe.countryOfOrigin.flag)
+                        .font(.caption2)
+                    
                     // Difficulty
                     HStack(spacing: 2) {
                         Image(systemName: recipe.difficulty.icon)
@@ -480,121 +470,278 @@ struct RecipeCard: View {
                 .shadow(color: Color.black.opacity(0.06), radius: 2, x: 0, y: 1)
         )
         .scaleEffect(isRecentlyTapped ? 0.98 : 1.0)
-        .opacity(isRecentlyTapped ? 0.8 : 1.0)
-        .animation(.easeInOut(duration: 0.1), value: isRecentlyTapped)
-        .contentShape(Rectangle())
         .onTapGesture {
             onTap()
         }
-    }
-    
-    private var isFavorite: Bool {
-        appState.favoriteRecipes.contains(recipe.id)
-    }
-}
-
-// MARK: - ViewModels and Supporting Views (Simplified for space)
-
-@MainActor
-@Observable
-class RecipeListViewModel {
-    var recipes: [Recipe] = []
-    var isLoading = false
-    var errorMessage: String?
-    
-    private let interactor: RecipeInteractorProtocol
-    private let router: RecipeRouterProtocol
-    
-    init(interactor: RecipeInteractorProtocol, router: RecipeRouterProtocol) {
-        self.interactor = interactor
-        self.router = router
-    }
-    
-    func loadRecipes() {
-        recipes = AppState.shared.recipes
-    }
-    
-    func filteredRecipes(searchText: String, category: RecipeCategory?, filters: Set<FilterOption>) -> [Recipe] {
-        var filtered = recipes
-        
-        // Apply search text filter
-        if !searchText.isEmpty {
-            filtered = filtered.filter { recipe in
-                recipe.title.localizedCaseInsensitiveContains(searchText) ||
-                recipe.description.localizedCaseInsensitiveContains(searchText) ||
-                recipe.tags.contains { $0.localizedCaseInsensitiveContains(searchText) }
-            }
+        .onAppear {
+            isFavorite = AppState.shared.favoriteRecipes.contains(recipe.id)
         }
-        
-        // Apply category filter
-        if let category = category {
-            filtered = filtered.filter { $0.category == category }
+        .onChange(of: AppState.shared.favoriteRecipes) { _, _ in
+            isFavorite = AppState.shared.favoriteRecipes.contains(recipe.id)
         }
-        
-        // Apply other filters
-        for filter in filters {
-            switch filter {
-            case .favorites:
-                filtered = filtered.filter { $0.isFavorite }
-            case .quickCook:
-                filtered = filtered.filter { $0.totalTime <= 1800 } // 30 minutes
-            case .vegetarian:
-                filtered = filtered.filter { $0.tags.contains("vegetarian") }
-            case .vegan:
-                filtered = filtered.filter { $0.tags.contains("vegan") }
-            case .glutenFree:
-                filtered = filtered.filter { $0.tags.contains("gluten-free") }
-            default:
-                break
-            }
-        }
-        
-        return filtered
     }
 }
 
-protocol RecipeInteractorProtocol {
-    var presenter: RecipePresenterProtocol? { get set }
-    func loadRecipes()
-    func searchRecipes(query: String)
-    func toggleFavorite(recipe: Recipe)
-}
-
-class RecipeInteractor: RecipeInteractorProtocol {
-    var presenter: RecipePresenterProtocol?
+// MARK: - Filter Components
+struct QuickFilterChip: View {
+    let filter: FilterOption
+    let isSelected: Bool
+    let action: () -> Void
     
-    func loadRecipes() {
-        // Implementation
-    }
-    
-    func searchRecipes(query: String) {
-        // Implementation
-    }
-    
-    func toggleFavorite(recipe: Recipe) {
-        // Implementation
-    }
-}
-
-protocol RecipePresenterProtocol {
-    var viewModel: RecipeListViewModel? { get set }
-}
-
-class RecipePresenter: RecipePresenterProtocol {
-    weak var viewModel: RecipeListViewModel?
-}
-
-struct AddRecipeView: View {
     var body: some View {
-        Text("Add Recipe View")
-            .navigationTitle("Add Recipe")
+        Button(action: action) {
+            HStack(spacing: 6) {
+                Image(systemName: filter.icon)
+                    .font(.caption)
+                
+                Text(filter.rawValue)
+                    .font(CookBookFonts.caption1)
+                    .fontWeight(.medium)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+            .background(
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(isSelected ? CookBookColors.primary : CookBookColors.surface)
+            )
+            .foregroundColor(isSelected ? .white : CookBookColors.text)
+        }
     }
 }
 
+struct CategoryFilterChip: View {
+    let category: RecipeCategory
+    let isSelected: Bool
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                Image(systemName: category.icon)
+                    .font(.caption)
+                
+                Text(category.rawValue)
+                    .font(CookBookFonts.caption1)
+                    .fontWeight(.medium)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+            .background(
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(isSelected ? CookBookColors.primary : CookBookColors.surface)
+            )
+            .foregroundColor(isSelected ? .white : CookBookColors.text)
+        }
+    }
+}
+
+struct DifficultyFilterChip: View {
+    let difficulty: DifficultyLevel
+    let isSelected: Bool
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                Image(systemName: difficulty.icon)
+                    .font(.caption)
+                
+                Text(difficulty.rawValue)
+                    .font(CookBookFonts.caption1)
+                    .fontWeight(.medium)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+            .background(
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(isSelected ? CookBookColors.primary : CookBookColors.surface)
+            )
+            .foregroundColor(isSelected ? .white : CookBookColors.text)
+        }
+    }
+}
+
+// MARK: - FiltersView (Country & Region Only)
 struct FiltersView: View {
+    @Environment(AppState.self) private var appState
+    @Environment(\.dismiss) private var dismiss
+    
     var body: some View {
-        Text("Filters View")
-            .navigationTitle("Filters")
+        NavigationView {
+            ScrollView {
+                VStack(spacing: 24) {
+                    // Country & Region Filters
+                    countryFilterSection
+                    
+                    // Clear Country Filters Button
+                    clearCountryFiltersSection
+                }
+                .padding()
+            }
+            .navigationTitle("Country & Region")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                }
+            }
+        }
+    }
+    
+    private var countryFilterSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Country & Region")
+                .font(CookBookFonts.headline)
+                .fontWeight(.semibold)
+                .foregroundColor(CookBookColors.text)
+            
+            // Country Selection
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Filter by Country")
+                    .font(CookBookFonts.subheadline)
+                    .foregroundColor(CookBookColors.textSecondary)
+                
+                if appState.availableCountries().isEmpty {
+                    Text("No recipes available")
+                        .font(CookBookFonts.caption1)
+                        .foregroundColor(CookBookColors.textSecondary)
+                        .italic()
+                } else {
+                    LazyVGrid(columns: [
+                        GridItem(.flexible()),
+                        GridItem(.flexible())
+                    ], spacing: 8) {
+                        // Clear selection option
+                        CountryFilterChip(
+                            country: nil,
+                            isSelected: appState.selectedCountry == nil && appState.selectedContinent == nil,
+                            action: {
+                                appState.clearCountryFilters()
+                            }
+                        )
+                        
+                        ForEach(appState.availableCountries(), id: \.self) { country in
+                            CountryFilterChip(
+                                country: country,
+                                isSelected: appState.selectedCountry == country,
+                                action: {
+                                    appState.setCountryFilter(country)
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+            
+            // Continent Selection
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Filter by Continent")
+                    .font(CookBookFonts.subheadline)
+                    .foregroundColor(CookBookColors.textSecondary)
+                
+                LazyVGrid(columns: [
+                    GridItem(.flexible()),
+                    GridItem(.flexible())
+                ], spacing: 8) {
+                    ForEach(appState.availableContinents(), id: \.self) { continent in
+                        ContinentFilterChip(
+                            continent: continent,
+                            isSelected: appState.selectedContinent == continent,
+                            action: {
+                                appState.setContinentFilter(continent)
+                            }
+                        )
+                    }
+                }
+            }
+        }
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(CookBookColors.surface)
+        )
+    }
+    
+    private var clearCountryFiltersSection: some View {
+        Button(action: {
+            appState.clearCountryFilters()
+        }) {
+            Text("Clear Country Filters")
+                .font(CookBookFonts.headline)
+                .fontWeight(.semibold)
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity, minHeight: 50)
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(CookBookColors.accent)
+                )
+        }
+    }
+}
+
+// MARK: - Country Filter Components
+struct CountryFilterChip: View {
+    let country: Country?
+    let isSelected: Bool
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                if let country = country {
+                    Text(country.flag)
+                        .font(.caption)
+                    
+                    Text(country.rawValue)
+                        .font(CookBookFonts.caption1)
+                        .fontWeight(.medium)
+                        .lineLimit(1)
+                } else {
+                    Image(systemName: "xmark.circle")
+                        .font(.caption)
+                    
+                    Text("All Countries")
+                        .font(CookBookFonts.caption1)
+                        .fontWeight(.medium)
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(isSelected ? CookBookColors.primary : CookBookColors.cardBackground)
+            )
+            .foregroundColor(isSelected ? .white : CookBookColors.text)
+        }
+    }
+}
+
+struct ContinentFilterChip: View {
+    let continent: Continent
+    let isSelected: Bool
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                Image(systemName: continent.icon)
+                    .font(.caption)
+                
+                Text(continent.rawValue)
+                    .font(CookBookFonts.caption1)
+                    .fontWeight(.medium)
+                    .lineLimit(1)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(isSelected ? CookBookColors.primary : CookBookColors.cardBackground)
+            )
+            .foregroundColor(isSelected ? .white : CookBookColors.text)
+        }
     }
 }
 

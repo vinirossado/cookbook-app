@@ -74,6 +74,7 @@ struct Recipe: Identifiable, Codable, Hashable {
     var isFavorite: Bool
     var createdAt: Date
     var updatedAt: Date
+    var countryOfOrigin: Country // New property for country origin
     
     var totalTime: TimeInterval {
         return prepTime + cookingTime

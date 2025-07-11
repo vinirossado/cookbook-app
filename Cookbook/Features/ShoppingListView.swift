@@ -273,6 +273,7 @@ class ShoppingInteractor: ShoppingInteractorProtocol {
     var presenter: ShoppingPresenterProtocol?
 }
 
+@MainActor
 protocol ShoppingPresenterProtocol {
     var viewModel: ShoppingViewModel? { get set }
 }
@@ -290,6 +291,10 @@ class ShoppingPresenter: ShoppingPresenterProtocol {
         interactor: interactor,
         router: router
     )
+    
+    // Wire VIP dependencies
+    interactor.presenter = presenter
+    presenter.viewModel = viewModel
     
     return ShoppingListView(viewModel: viewModel)
         .environment(AppState.shared)

@@ -40,7 +40,8 @@ struct MockDataProvider {
                     createInstruction(7, "Serve hot with maple syrup and fresh fruit.")
                 ],
                 tags: ["breakfast", "fluffy", "classic", "family-friendly"],
-                rating: 4.8
+                rating: 4.8,
+                country: .unitedStates
             ),
             
             createMockRecipe(
@@ -71,7 +72,8 @@ struct MockDataProvider {
                     createInstruction(7, "Drizzle with olive oil and sprinkle with red pepper flakes.")
                 ],
                 tags: ["healthy", "protein", "avocado", "poached"],
-                rating: 4.6
+                rating: 4.6,
+                country: .australia
             ),
             
             // Lunch Recipes
@@ -105,7 +107,8 @@ struct MockDataProvider {
                     createInstruction(7, "Toss gently and refrigerate for 30 minutes before serving.")
                 ],
                 tags: ["mediterranean", "quinoa", "salad", "healthy", "meal-prep"],
-                rating: 4.7
+                rating: 4.7,
+                country: .greece
             ),
             
             // Dinner Recipes
@@ -140,7 +143,8 @@ struct MockDataProvider {
                     createInstruction(8, "Serve with lemon wedges.")
                 ],
                 tags: ["salmon", "healthy", "roasted", "herbs", "dinner"],
-                rating: 4.9
+                rating: 4.9,
+                country: .norway
             ),
             
             createMockRecipe(
@@ -175,7 +179,8 @@ struct MockDataProvider {
                     createInstruction(9, "Garnish with thyme and serve immediately.")
                 ],
                 tags: ["risotto", "mushrooms", "italian", "creamy", "comfort"],
-                rating: 4.8
+                rating: 4.8,
+                country: .italy
             ),
             
             // Dessert Recipes
@@ -210,7 +215,8 @@ struct MockDataProvider {
                     createInstruction(9, "Cool on baking sheet for 2 minutes before transferring.", duration: 120)
                 ],
                 tags: ["cookies", "chocolate", "classic", "baking", "sweet"],
-                rating: 4.9
+                rating: 4.9,
+                country: .unitedStates
             ),
             
             createMockRecipe(
@@ -238,7 +244,8 @@ struct MockDataProvider {
                     createInstruction(6, "Serve immediately or chill for later.")
                 ],
                 tags: ["healthy", "berries", "yogurt", "parfait", "no-bake"],
-                rating: 4.5
+                rating: 4.5,
+                country: .france
             ),
             
             // Snack Recipes
@@ -272,7 +279,8 @@ struct MockDataProvider {
                     createInstruction(7, "Serve hummus with fresh vegetable sticks.")
                 ],
                 tags: ["hummus", "healthy", "vegetables", "protein", "mediterranean"],
-                rating: 4.6
+                rating: 4.6,
+                country: .lebanon
             ),
             
             // Beverage Recipes
@@ -303,7 +311,8 @@ struct MockDataProvider {
                     createInstruction(6, "Garnish with extra chia seeds if desired.")
                 ],
                 tags: ["smoothie", "green", "healthy", "vegan", "breakfast"],
-                rating: 4.4
+                rating: 4.4,
+                country: .brazil
             ),
             
             // Advanced Recipes
@@ -342,7 +351,8 @@ struct MockDataProvider {
                     createInstruction(12, "Rest for 10 minutes before slicing.", duration: 600)
                 ],
                 tags: ["beef", "wellington", "advanced", "special-occasion", "pastry"],
-                rating: 4.9
+                rating: 4.9,
+                country: .unitedKingdom
             )
         ]
     }
@@ -358,7 +368,8 @@ struct MockDataProvider {
         ingredients: [Ingredient],
         instructions: [CookingStep],
         tags: [String],
-        rating: Double
+        rating: Double,
+        country: Country
     ) -> Recipe {
         let userId = UUID()
         
@@ -397,7 +408,8 @@ struct MockDataProvider {
             isPublic: true,
             isFavorite: false,
             createdAt: Date().addingTimeInterval(-TimeInterval.random(in: 0...2592000)), // Random date within last 30 days
-            updatedAt: Date().addingTimeInterval(-TimeInterval.random(in: 0...86400)) // Random date within last day
+            updatedAt: Date().addingTimeInterval(-TimeInterval.random(in: 0...86400)), // Random date within last day
+            countryOfOrigin: country
         )
     }
     
@@ -599,7 +611,8 @@ struct MockDataProvider {
                 isPublic: true,
                 isFavorite: false,
                 createdAt: Date(),
-                updatedAt: Date()
+                updatedAt: Date(),
+                countryOfOrigin: .greece
             )
             cart.addIngredient(ingredient, from: mockRecipe)
         }

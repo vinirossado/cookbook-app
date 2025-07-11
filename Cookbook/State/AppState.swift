@@ -21,7 +21,7 @@ class AppState {
     var authError: String?
     
     // MARK: - App Settings
-    var isDarkMode: Bool = false
+    var isDarkMode: Bool = true
     var selectedLanguage: String = "en"
     var notificationsEnabled: Bool = true
     var hapticFeedbackEnabled: Bool = true
@@ -36,6 +36,11 @@ class AppState {
     var selectedDifficulty: DifficultyLevel?
     var sortOption: SortOption = .newest
     var filterOptions: Set<FilterOption> = []
+    
+    // MARK: - Country/Region Filtering State
+    var selectedCountry: Country?
+    var selectedContinent: Continent?
+    var countryFilterEnabled: Bool = false
     
     // MARK: - Shopping Cart State
     var shoppingCart: ShoppingCart = ShoppingCart()
@@ -202,6 +207,13 @@ class AppState {
         saveShoppingCart()
     }
     
+    func addIngredientsToShoppingCart(_ ingredients: [Ingredient], from recipe: Recipe) {
+        for ingredient in ingredients {
+            shoppingCart.addIngredient(ingredient, from: recipe)
+        }
+        saveShoppingCart()
+    }
+    
     func removeFromShoppingCart(_ item: ShoppingItem) {
         shoppingCart.items.removeAll { $0.id == item.id }
         saveShoppingCart()
@@ -264,6 +276,123 @@ class AppState {
     private func sendWantTodayNotification(_ meal: PlannedMeal) {
         // Implementation for sending push notifications
         NotificationManager.shared.sendWantTodayNotification(meal: meal)
+    }
+    
+    // MARK: - Country/Region Filtering Methods
+    func setCountryFilter(_ country: Country?) {
+        selectedCountry = country
+        selectedContinent = nil // Clear continent when country is selected
+        countryFilterEnabled = country != nil
+    }
+    
+    func setContinentFilter(_ continent: Continent?) {
+        selectedContinent = continent
+        selectedCountry = nil // Clear country when continent is selected
+        countryFilterEnabled = continent != nil
+    }
+    
+    func clearCountryFilters() {
+        selectedCountry = nil
+        selectedContinent = nil
+        countryFilterEnabled = false
+    }
+    
+    func recipesByCountry(_ country: Country) -> [Recipe] {
+        return recipes.filter { $0.countryOfOrigin == country }
+    }
+    
+    func recipesByContinent(_ continent: Continent) -> [Recipe] {
+        return recipes.filter { $0.countryOfOrigin.continent == continent }
+    }
+    
+    func availableCountries() -> [Country] {
+        let recipeCountries = Set(recipes.map { $0.countryOfOrigin })
+        return Country.allCases.filter { recipeCountries.contains($0) }.sorted { $0.rawValue < $1.rawValue }
+    }
+    
+    func availableContinents() -> [Continent] {
+        let recipeContinents = Set(recipes.map { $0.countryOfOrigin.continent })
+        return Continent.allCases.filter { recipeContinents.contains($0) }.sorted { $0.rawValue < $1.rawValue }
+    }
+    
+    func filteredRecipes() -> [Recipe] {
+        var filteredRecipes = recipes
+        
+        // Apply text search filter
+        if !searchText.isEmpty {
+            filteredRecipes = filteredRecipes.filter { recipe in
+                recipe.title.localizedCaseInsensitiveContains(searchText) ||
+                recipe.description.localizedCaseInsensitiveContains(searchText) ||
+                recipe.tags.contains { $0.localizedCaseInsensitiveContains(searchText) } ||
+                recipe.ingredients.contains { $0.name.localizedCaseInsensitiveContains(searchText) }
+            }
+        }
+        
+        // Apply category filter
+        if let selectedCategory = selectedCategory {
+            filteredRecipes = filteredRecipes.filter { $0.category == selectedCategory }
+        }
+        
+        // Apply difficulty filter
+        if let selectedDifficulty = selectedDifficulty {
+            filteredRecipes = filteredRecipes.filter { $0.difficulty == selectedDifficulty }
+        }
+        
+        // Apply country filter
+        if let selectedCountry = selectedCountry {
+            filteredRecipes = filteredRecipes.filter { $0.countryOfOrigin == selectedCountry }
+        }
+        
+        // Apply continent filter
+        if let selectedContinent = selectedContinent {
+            filteredRecipes = filteredRecipes.filter { $0.countryOfOrigin.continent == selectedContinent }
+        }
+        
+        // Apply other filter options
+        for option in filterOptions {
+            switch option {
+            case .favorites:
+                filteredRecipes = filteredRecipes.filter { favoriteRecipes.contains($0.id) }
+            case .myRecipes:
+                filteredRecipes = filteredRecipes.filter { $0.createdBy == currentUser?.id }
+            case .recentlyViewed:
+                filteredRecipes = filteredRecipes.filter { recentlyViewedRecipes.contains($0.id) }
+            case .quickCook:
+                filteredRecipes = filteredRecipes.filter { $0.cookingTime <= 1800 } // 30 minutes
+            case .vegetarian:
+                filteredRecipes = filteredRecipes.filter { $0.tags.contains("vegetarian") }
+            case .vegan:
+                filteredRecipes = filteredRecipes.filter { $0.tags.contains("vegan") }
+            case .glutenFree:
+                filteredRecipes = filteredRecipes.filter { $0.tags.contains("gluten-free") }
+            case .all, .byCountry, .byContinent:
+                break // These don't add additional filtering
+            }
+        }
+        
+        // Apply sorting
+        switch sortOption {
+        case .nameAscending:
+            filteredRecipes.sort { $0.title < $1.title }
+        case .nameDescending:
+            filteredRecipes.sort { $0.title > $1.title }
+        case .newest:
+            filteredRecipes.sort { $0.createdAt > $1.createdAt }
+        case .oldest:
+            filteredRecipes.sort { $0.createdAt < $1.createdAt }
+        case .ratingHighest:
+            filteredRecipes.sort { $0.rating > $1.rating }
+        case .ratingLowest:
+            filteredRecipes.sort { $0.rating < $1.rating }
+        case .cookingTimeShort:
+            filteredRecipes.sort { $0.cookingTime < $1.cookingTime }
+        case .cookingTimeLong:
+            filteredRecipes.sort { $0.cookingTime > $1.cookingTime }
+        case .difficulty:
+            filteredRecipes.sort { $0.difficulty.rawValue < $1.difficulty.rawValue }
+        }
+        
+        return filteredRecipes
     }
     
     // MARK: - Data Persistence

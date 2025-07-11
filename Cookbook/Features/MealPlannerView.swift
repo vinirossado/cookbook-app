@@ -185,7 +185,7 @@ struct MealPlannerView: View {
     }
     
     private var dailyNutritionSummary: NutritionData? {
-        let meals = appState.currentMealPlan?.meals(for: selectedDate) ?? []
+        let _ = appState.currentMealPlan?.meals(for: selectedDate) ?? []
         // Calculate total nutrition from all meals for the day
         // This is a simplified calculation
         return nil
@@ -484,6 +484,7 @@ class MealPlannerInteractor: MealPlannerInteractorProtocol {
     var presenter: MealPlannerPresenterProtocol?
 }
 
+@MainActor
 protocol MealPlannerPresenterProtocol {
     var viewModel: MealPlannerViewModel? { get set }
 }
@@ -502,6 +503,10 @@ class MealPlannerPresenter: MealPlannerPresenterProtocol {
         router: router
     )
     
-    MealPlannerView(viewModel: viewModel)
+    // Wire VIP dependencies
+    interactor.presenter = presenter
+    presenter.viewModel = viewModel
+    
+    return MealPlannerView(viewModel: viewModel)
         .environment(AppState.shared)
 }

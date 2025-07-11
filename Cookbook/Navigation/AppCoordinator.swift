@@ -41,19 +41,25 @@ struct AppCoordinator: View {
     private func setupNotificationObservers() {
         // Listen for notification-triggered navigation
         NotificationCenter.default.addObserver(forName: .navigateToMeal, object: nil, queue: .main) { notification in
-            if let mealId = notification.object as? String {
+            if notification.object is String {
                 // Navigate to meal planner with specific meal
-                appState.selectedTab = .planner
+                Task { @MainActor in
+                    appState.selectedTab = .planner
+                }
             }
         }
         
         NotificationCenter.default.addObserver(forName: .navigateToShopping, object: nil, queue: .main) { _ in
-            appState.selectedTab = .shopping
+            Task { @MainActor in
+                appState.selectedTab = .shopping
+            }
         }
         
         NotificationCenter.default.addObserver(forName: .navigateToTodayMeal, object: nil, queue: .main) { notification in
-            if let mealId = notification.object as? String {
-                appState.selectedTab = .today
+            if notification.object is String {
+                Task { @MainActor in
+                    appState.selectedTab = .today
+                }
             }
         }
         

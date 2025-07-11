@@ -29,6 +29,9 @@ struct TodayView: View {
                 // Today's Meals
                 todayMealsSection
                 
+                // World Cuisines
+                worldCuisinesSection
+                
                 // Quick Actions
                 quickActionsSection
                 
@@ -176,6 +179,49 @@ struct TodayView: View {
         }
     }
     
+    private var worldCuisinesSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                Image(systemName: "globe")
+                    .foregroundColor(CookBookColors.primary)
+                
+                Text("World Cuisines")
+                    .font(CookBookFonts.headline)
+                    .fontWeight(.semibold)
+                
+                Spacer()
+                
+                NavigationLink(destination: RecipeRouter.createModule()) {
+                    Text("See All")
+                        .font(CookBookFonts.caption1)
+                        .foregroundColor(CookBookColors.primary)
+                }
+            }
+            
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 12) {
+                    ForEach(topCountriesWithRecipes, id: \.country) { countryStats in
+                        CuisineStatsCard(
+                            country: countryStats.country,
+                            recipeCount: countryStats.count
+                        ) {
+                            // Navigate to filtered recipes
+                            appState.setCountryFilter(countryStats.country)
+                            appState.selectedTab = .recipes
+                        }
+                    }
+                }
+                .padding(.horizontal)
+            }
+        }
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(CookBookColors.cardBackground)
+                .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+        )
+    }
+    
     private var quickActionsSection: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Quick Actions")
@@ -239,6 +285,16 @@ struct TodayView: View {
                 )
             }
         }
+    }
+    
+    // MARK: - Computed Properties
+    private var topCountriesWithRecipes: [(country: Country, count: Int)] {
+        let countryGroups = Dictionary(grouping: appState.recipes) { $0.countryOfOrigin }
+        return countryGroups
+            .map { (country: $0.key, count: $0.value.count) }
+            .sorted { $0.count > $1.count }
+            .prefix(6)
+            .map { $0 }
     }
     
     // MARK: - Helper Properties
@@ -529,6 +585,38 @@ struct CookingTimer: Identifiable {
     }
 }
 
+struct CuisineStatsCard: View {
+    let country: Country
+    let recipeCount: Int
+    let action: () -> Void
+    
+    var body: some View {
+        VStack(spacing: 8) {
+            Text(country.flag)
+                .font(.title)
+            
+            Text(country.rawValue)
+                .font(CookBookFonts.caption1)
+                .fontWeight(.medium)
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+            
+            Text("\(recipeCount) recipe\(recipeCount == 1 ? "" : "s")")
+                .font(CookBookFonts.caption2)
+                .foregroundColor(CookBookColors.textSecondary)
+        }
+        .frame(width: 80, height: 80)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(CookBookColors.surface)
+                .shadow(color: Color.black.opacity(0.1), radius: 2, x: 0, y: 1)
+        )
+        .onTapGesture {
+            action()
+        }
+    }
+}
+
 @MainActor
 @Observable
 class TodayViewModel {
@@ -563,6 +651,7 @@ class TodayInteractor: TodayInteractorProtocol {
     var presenter: TodayPresenterProtocol?
 }
 
+@MainActor
 protocol TodayPresenterProtocol {
     var viewModel: TodayViewModel? { get set }
 }
@@ -580,6 +669,10 @@ class TodayPresenter: TodayPresenterProtocol {
         interactor: interactor,
         router: router
     )
+    
+    // Wire VIP dependencies
+    interactor.presenter = presenter
+    presenter.viewModel = viewModel
     
     return TodayView(viewModel: viewModel)
         .environment(AppState.shared)

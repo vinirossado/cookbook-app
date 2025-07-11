@@ -8,6 +8,7 @@
 import Foundation
 
 // MARK: - Protocol
+@MainActor
 protocol AuthenticationPresenterProtocol {
     var viewModel: AuthenticationViewModel? { get set }
     

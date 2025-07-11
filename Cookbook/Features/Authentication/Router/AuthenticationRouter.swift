@@ -8,6 +8,7 @@
 import SwiftUI
 
 // MARK: - Protocol
+@MainActor
 protocol AuthenticationRouterProtocol {
     func navigateToMain()
     func navigateToForgotPassword()

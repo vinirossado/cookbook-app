@@ -485,7 +485,9 @@ class CookingModeViewModel {
         pausedTime = 0
         
         timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
-            self.updateTimer()
+            Task { @MainActor in
+                self.updateTimer()
+            }
         }
         
         // Send timer to watch
@@ -522,7 +524,9 @@ class CookingModeViewModel {
         timerStartTime = Date()
         
         timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
-            self.updateTimer()
+            Task { @MainActor in
+                self.updateTimer()
+            }
         }
     }
     
@@ -687,21 +691,6 @@ struct TertiaryButtonStyle: ButtonStyle {
     }
 }
 
-// MARK: - Time Formatting Extension
-extension TimeInterval {
-    static func formatTime(_ time: TimeInterval) -> String {
-        let hours = Int(time) / 3600
-        let minutes = Int(time) % 3600 / 60
-        let seconds = Int(time) % 60
-        
-        if hours > 0 {
-            return String(format: "%d:%02d:%02d", hours, minutes, seconds)
-        } else {
-            return String(format: "%02d:%02d", minutes, seconds)
-        }
-    }
-}
-
 // MARK: - Notifications
 extension Notification.Name {
     static let timerStarted = Notification.Name("timerStarted")
@@ -718,7 +707,11 @@ extension Notification.Name {
         router: router
     )
     
-    CookingModeDetailView(
+    // Wire VIP dependencies
+    interactor.presenter = presenter
+    presenter.viewModel = viewModel
+    
+    return CookingModeDetailView(
         recipe: MockDataProvider.generateMockRecipes()[0],
         viewModel: viewModel
     )

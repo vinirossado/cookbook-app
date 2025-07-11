@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Foundation
 
 @MainActor
 @Observable
@@ -20,6 +21,7 @@ class RecipeDetailViewModel {
     var checkedIngredients: Set<UUID> = []
     var completedSteps: Set<Int> = []
     var adjustedIngredients: [Ingredient] = []
+    var uncheckedIngredientsAmount: Int = 0
     var shareContent: String = ""
     
     // Loading states
@@ -45,10 +47,10 @@ class RecipeDetailViewModel {
     func toggleFavorite() {
         guard let recipe = recipe else { return }
         
+        // Optimistic update for immediate UI feedback
         isFavorite.toggle()
         
-        AppState.shared.toggleFavorite(recipe)
-        
+        // Delegate to business logic layer
         interactor.toggleFavorite(recipeId: recipe.id, isFavorite: isFavorite)
     }
     
@@ -85,8 +87,17 @@ class RecipeDetailViewModel {
     func addIngredientsToShoppingList() {
         guard let recipe = recipe else { return }
         
-        AppState.shared.addRecipeToShoppingCart(recipe)
-        interactor.addIngredientsToShoppingList(ingredients: adjustedIngredients, recipeId: recipe.id)
+        // Filter out checked ingredients - only add unchecked ones
+        let uncheckedIngredients = adjustedIngredients.filter { ingredient in
+            !checkedIngredients.contains(ingredient.id)
+        }
+        // Only proceed if there are unchecked ingredients to add
+        guard !uncheckedIngredients.isEmpty else { return }
+        
+        self.uncheckedIngredientsAmount = uncheckedIngredients.count
+        
+        // Delegate to business logic layer - no direct AppState manipulation
+        interactor.addIngredientsToShoppingList(ingredients: uncheckedIngredients, recipeId: recipe.id)
     }
     
     func showMealPlanPicker() async {
@@ -106,10 +117,8 @@ class RecipeDetailViewModel {
             servings: adjustedServings
         )
         
-        AppState.shared.addMealToPlan(todayMeal)
-        AppState.shared.markWantToday(todayMeal)
-        
-        interactor.addToWantToday(recipeId: recipe.id)
+        // Delegate to business logic layer
+        interactor.addToWantToday(recipeId: recipe.id, meal: todayMeal)
     }
     
     func duplicateRecipe() {
@@ -129,8 +138,10 @@ class RecipeDetailViewModel {
         return """
         \(recipe.title)
         
+        \(recipe.countryOfOrigin.flag) From \(recipe.countryOfOrigin.rawValue)
+        
         Serves: \(recipe.servingSize)
-        Prep: \(recipe.prepTime) min | Cook: \(recipe.cookingTime) min
+        Prep: \(formatTime(recipe.prepTime)) | Cook: \(formatTime(recipe.cookingTime))
         
         \(recipe.description)
         
@@ -143,6 +154,23 @@ class RecipeDetailViewModel {
         Shared from CookBook Pro
         """
     }
+    
+    private func formatTime(_ minutes: Double) -> String {
+        let totalMinutes = Int(minutes)
+        
+        if totalMinutes < 60 {
+            return "\(totalMinutes) min"
+        } else {
+            let hours = totalMinutes / 60
+            let remainingMinutes = totalMinutes % 60
+            
+            if remainingMinutes == 0 {
+                return hours == 1 ? "1 hour" : "\(hours) hours"
+            } else {
+                return hours == 1 ? "1 hour \(remainingMinutes) min" : "\(hours) hours \(remainingMinutes) min"
+            }
+        }
+    }
 }
 
 // MARK: - VIP Protocol Implementations
@@ -152,7 +180,7 @@ protocol RecipeDetailInteractorProtocol {
     func loadRecipeDetails(_ recipeId: UUID)
     func toggleFavorite(recipeId: UUID, isFavorite: Bool)
     func addIngredientsToShoppingList(ingredients: [Ingredient], recipeId: UUID)
-    func addToWantToday(recipeId: UUID)
+    func addToWantToday(recipeId: UUID, meal: PlannedMeal)
     func duplicateRecipe(_ recipe: Recipe)
 }
 
@@ -197,10 +225,10 @@ class RecipeDetailInteractor: RecipeDetailInteractorProtocol {
         }
     }
     
-    func addToWantToday(recipeId: UUID) {
+    func addToWantToday(recipeId: UUID, meal: PlannedMeal) {
         Task {
             do {
-                try await worker.addToWantToday(recipeId: recipeId)
+                try await worker.addToWantToday(recipeId: recipeId, meal: meal)
                 await presenter?.presentAddedToWantToday()
             } catch {
                 await presenter?.presentError(error.localizedDescription)
@@ -220,6 +248,7 @@ class RecipeDetailInteractor: RecipeDetailInteractorProtocol {
     }
 }
 
+@MainActor
 protocol RecipeDetailPresenterProtocol {
     var viewModel: RecipeDetailViewModel? { get set }
     
@@ -232,7 +261,7 @@ protocol RecipeDetailPresenterProtocol {
 }
 
 @MainActor
-class RecipeDetailPresenter: @preconcurrency RecipeDetailPresenterProtocol {
+class RecipeDetailPresenter: RecipeDetailPresenterProtocol {
     weak var viewModel: RecipeDetailViewModel?
     
     func presentRecipeDetails(_ recipe: Recipe) async {
@@ -261,6 +290,7 @@ class RecipeDetailPresenter: @preconcurrency RecipeDetailPresenterProtocol {
     }
 }
 
+@MainActor
 protocol RecipeDetailRouterProtocol {
     func navigateToCookingMode(_ recipe: Recipe) async
     func showMealPlanPicker() async
@@ -291,19 +321,20 @@ class RecipeDetailRouter: RecipeDetailRouterProtocol {
     
     @MainActor
     func navigateToCookingMode(_ recipe: Recipe) {
-        // Navigation to cooking mode will be handled by the view
+        // Navigation coordination - delegate to app coordinator
+        // In a real app, this would use a proper coordinator pattern
         AppState.shared.selectedRecipe = recipe
     }
     
     @MainActor
     func showMealPlanPicker() {
-        // Show meal plan picker - handled by coordinator
+        // Show meal plan picker - delegate to app coordinator
         AppState.shared.presentedSheets.insert(.mealPlanner)
     }
     
     @MainActor
     func navigateToEditRecipe(_ recipe: Recipe) {
-        // Navigate to edit recipe - handled by coordinator  
+        // Navigate to edit recipe - delegate to app coordinator
         AppState.shared.selectedRecipe = recipe
         AppState.shared.isShowingAddRecipe = true
     }
@@ -313,7 +344,7 @@ protocol RecipeDetailWorkerProtocol {
     func fetchRecipeDetails(_ recipeId: UUID) async throws -> Recipe
     func updateFavoriteStatus(recipeId: UUID, isFavorite: Bool) async throws
     func addIngredientsToShoppingList(ingredients: [Ingredient], recipeId: UUID) async throws
-    func addToWantToday(recipeId: UUID) async throws
+    func addToWantToday(recipeId: UUID, meal: PlannedMeal) async throws
     func duplicateRecipe(_ recipe: Recipe) async throws -> Recipe
 }
 
@@ -335,11 +366,16 @@ class RecipeDetailWorker: RecipeDetailWorkerProtocol {
         // Simulate API call
         try await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
         
-        // In a real app, this would update the backend
+        // Update AppState after successful backend operation
         if isFavorite {
             AppState.shared.favoriteRecipes.insert(recipeId)
         } else {
             AppState.shared.favoriteRecipes.remove(recipeId)
+        }
+        
+        // Update recipe in recipes array
+        if let index = AppState.shared.recipes.firstIndex(where: { $0.id == recipeId }) {
+            AppState.shared.recipes[index].isFavorite = isFavorite
         }
     }
     
@@ -348,19 +384,22 @@ class RecipeDetailWorker: RecipeDetailWorkerProtocol {
         // Simulate API call
         try await Task.sleep(nanoseconds: 300_000_000) // 0.3 seconds
         
-        // In a real app, this would add to backend shopping list
-        guard let recipe = AppState.shared.recipes.first(where: { $0.id == recipeId }) else { return }
+        // Update AppState after successful backend operation
+        guard let recipe = AppState.shared.recipes.first(where: { $0.id == recipeId }) else { 
+            throw RecipeDetailError.recipeNotFound 
+        }
         
-        AppState.shared.addRecipeToShoppingCart(recipe)
+        AppState.shared.addIngredientsToShoppingCart(ingredients, from: recipe)
     }
     
     @MainActor
-    func addToWantToday(recipeId: UUID) async throws {
+    func addToWantToday(recipeId: UUID, meal: PlannedMeal) async throws {
         // Simulate API call
         try await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
         
-        // In a real app, this would update the backend meal plan
-        // The actual logic is handled in the view model
+        // Update AppState after successful backend operation
+        AppState.shared.addMealToPlan(meal)
+        AppState.shared.markWantToday(meal)
     }
     
     @MainActor
@@ -387,7 +426,8 @@ class RecipeDetailWorker: RecipeDetailWorkerProtocol {
             isPublic: false,
             isFavorite: false,
             createdAt: Date(),
-            updatedAt: Date()
+            updatedAt: Date(),
+            countryOfOrigin: recipe.countryOfOrigin
         )
         
         AppState.shared.addRecipe(duplicatedRecipe)
