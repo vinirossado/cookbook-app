@@ -7,6 +7,7 @@
 
 import SwiftUI
 import Foundation
+import WatchConnectivity
 
 struct RecipeListView: View {
     @State private var viewModel: RecipeListViewModel
@@ -44,22 +45,65 @@ struct RecipeListView: View {
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
-                Button("🔔 Test") {
-                    // Test navigation
-                    if let firstRecipe = filteredRecipes.first {
-                        print("🔍 Testing navigation with recipe: \(firstRecipe.title)")
-                        selectedRecipe = firstRecipe
+                Menu("🔔 Test") {
+                    Button("Test Notification") {
+                        // Test notification
+                        Task {
+                            await NotificationManager.shared.requestAuthorization()
+                            NotificationManager.shared.scheduleLocalNotification(
+                                id: "test_notification",
+                                title: "Test Notification",
+                                body: "This is a test notification from Cookbook!",
+                                timeInterval: 1
+                            )
+                        }
                     }
                     
-                    // Test notification
-                    Task {
-                        await NotificationManager.shared.requestAuthorization()
-                        NotificationManager.shared.scheduleLocalNotification(
-                            id: "test_notification",
-                            title: "Test Notification",
-                            body: "This is a test notification from Cookbook!",
-                            timeInterval: 1
-                        )
+                    Button("Sync to Watch") {
+                        // Test Watch sync
+                        WatchConnectivityManager.shared.syncDataToWatch()
+                        
+                        // Show connectivity status
+                        let isConnected = WatchConnectivityManager.shared.isConnected
+                        let isReachable = WCSession.default.isReachable
+                        let isPaired = WCSession.default.isPaired
+                        let isInstalled = WCSession.default.isWatchAppInstalled
+                        
+                        let statusMessage = """
+                        📱→⌚ Status:
+                        Connected: \(isConnected)
+                        Reachable: \(isReachable) 
+                        Paired: \(isPaired)
+                        App Installed: \(isInstalled)
+                        """
+                        
+                        print(statusMessage)
+                        showToast(message: "Check console for detailed status", icon: "applewatch")
+                    }
+                    
+                    Button("Simulate Watch Recipe Pick") {
+                        // Simulate Watch picking a recipe
+                        if let randomRecipe = filteredRecipes.randomElement() {
+                            // Direct call to WatchConnectivityManager's message handler
+                            let simulatedMessage = [
+                                "action": "markWantToday",
+                                "recipeId": randomRecipe.id.uuidString
+                            ]
+                            
+                            // Call the handler directly instead of going through session
+                            let watchManager = WatchConnectivityManager.shared
+                            watchManager.session(WCSession.default, didReceiveMessage: simulatedMessage)
+                            
+                            showToast(message: "Simulated Watch picked: \(randomRecipe.title)", icon: "applewatch")
+                        }
+                    }
+                    
+                    Button("Test Navigation") {
+                        // Test navigation
+                        if let firstRecipe = filteredRecipes.first {
+                            print("🔍 Testing navigation with recipe: \(firstRecipe.title)")
+                            selectedRecipe = firstRecipe
+                        }
                     }
                 }
             }

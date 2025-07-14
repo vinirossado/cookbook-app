@@ -61,6 +61,8 @@ struct ContentView: View {
 
 struct WatchTodayView: View {
     @EnvironmentObject private var connectivity: WatchConnectivityManager
+    @State private var showingConfirmation = false
+    @State private var confirmationMessage = ""
     
     var body: some View {
         ScrollView {
@@ -77,6 +79,18 @@ struct WatchTodayView: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 
+                // Connection Status
+                if !connectivity.isConnected {
+                    HStack {
+                        Image(systemName: "exclamationmark.triangle")
+                            .foregroundColor(.orange)
+                        Text("Not connected to iPhone")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(.vertical, 4)
+                }
+                
                 // Want Today Meals
                 if !connectivity.wantTodayMeals.isEmpty {
                     VStack(alignment: .leading, spacing: 8) {
@@ -92,6 +106,7 @@ struct WatchTodayView: View {
                             WatchMealCard(meal: meal) {
                                 // Start cooking mode
                                 connectivity.startCookingMode(recipeId: meal.recipeId)
+                                showConfirmation("Starting cooking mode...")
                             }
                         }
                     }
@@ -113,6 +128,7 @@ struct WatchTodayView: View {
                         ForEach(connectivity.todayMeals.prefix(4), id: \.id) { meal in
                             WatchMealCard(meal: meal) {
                                 connectivity.startCookingMode(recipeId: meal.recipeId)
+                                showConfirmation("Starting cooking mode...")
                             }
                         }
                     }
@@ -120,13 +136,20 @@ struct WatchTodayView: View {
                 
                 // Quick Actions
                 VStack(spacing: 8) {
-                    Button("Random Recipe") {
+                    Button("🎲 Random Recipe to Cook") {
                         connectivity.requestRandomRecipe()
+                        showConfirmation("Finding a recipe for you...")
                     }
                     .buttonStyle(.borderedProminent)
                     .controlSize(.small)
                     
-                    Button("Shopping List") {
+                    Button("📖 Browse Recipes") {
+                        // This will switch to recipes tab - handled by TabView selection
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                    
+                    Button("🛒 Shopping List") {
                         // Switch to shopping tab
                     }
                     .buttonStyle(.bordered)
@@ -136,6 +159,11 @@ struct WatchTodayView: View {
             .padding(.vertical)
         }
         .navigationTitle("Today")
+        .alert("Action", isPresented: $showingConfirmation) {
+            Button("OK") { }
+        } message: {
+            Text(confirmationMessage)
+        }
     }
     
     private var greetingText: String {
@@ -147,23 +175,63 @@ struct WatchTodayView: View {
         default: return "Night"
         }
     }
+    
+    private func showConfirmation(_ message: String) {
+        confirmationMessage = message
+        showingConfirmation = true
+    }
 }
 
 struct WatchRecipesView: View {
     @EnvironmentObject private var connectivity: WatchConnectivityManager
     @State private var searchText = ""
+    @State private var showingConfirmation = false
+    @State private var confirmationMessage = ""
+    @State private var selectedRecipeForCooking: WatchRecipe?
     
     var body: some View {
         NavigationView {
             List {
-                ForEach(filteredRecipes, id: \.id) { recipe in
-                    WatchRecipeRow(recipe: recipe) {
-                        connectivity.startCookingMode(recipeId: recipe.id)
+                // Show connection status if not connected
+                if !connectivity.isConnected {
+                    Section {
+                        HStack {
+                            Image(systemName: "exclamationmark.triangle")
+                                .foregroundColor(.orange)
+                            Text("Not connected to iPhone")
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                }
+                
+                // Show recipes or loading state
+                if connectivity.recipes.isEmpty && connectivity.isConnected {
+                    Section {
+                        HStack {
+                            ProgressView()
+                                .scaleEffect(0.7)
+                            Text("Loading recipes...")
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                } else {
+                    ForEach(filteredRecipes, id: \.id) { recipe in
+                        WatchRecipeRow(recipe: recipe) {
+                            connectivity.startCookingMode(recipeId: recipe.id)
+                            showConfirmation("Starting cooking mode for \(recipe.title)")
+                        }
                     }
                 }
             }
             .navigationTitle("Recipes")
             .searchable(text: $searchText, prompt: "Search recipes")
+            .alert("Action", isPresented: $showingConfirmation) {
+                Button("OK") { }
+            } message: {
+                Text(confirmationMessage)
+            }
         }
     }
     
@@ -176,22 +244,62 @@ struct WatchRecipesView: View {
             }
         }
     }
+    
+    private func showConfirmation(_ message: String) {
+        confirmationMessage = message
+        showingConfirmation = true
+    }
 }
 
 struct WatchShoppingView: View {
     @EnvironmentObject private var connectivity: WatchConnectivityManager
+    @State private var showingConfirmation = false
+    @State private var confirmationMessage = ""
     
     var body: some View {
         NavigationView {
             List {
-                ForEach(connectivity.shoppingItems, id: \.id) { item in
-                    WatchShoppingItemRow(item: item) {
-                        connectivity.toggleShoppingItem(itemId: item.id)
+                // Show connection status if not connected
+                if !connectivity.isConnected {
+                    Section {
+                        HStack {
+                            Image(systemName: "exclamationmark.triangle")
+                                .foregroundColor(.orange)
+                            Text("Not connected to iPhone")
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                }
+                
+                // Show shopping items or empty state
+                if connectivity.shoppingItems.isEmpty && connectivity.isConnected {
+                    Section {
+                        Text("No shopping items")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
+                } else {
+                    ForEach(connectivity.shoppingItems, id: \.id) { item in
+                        WatchShoppingItemRow(item: item) {
+                            connectivity.toggleShoppingItem(itemId: item.id)
+                            showConfirmation("Toggled \(item.name)")
+                        }
                     }
                 }
             }
             .navigationTitle("Shopping")
+            .alert("Action", isPresented: $showingConfirmation) {
+                Button("OK") { }
+            } message: {
+                Text(confirmationMessage)
+            }
         }
+    }
+    
+    private func showConfirmation(_ message: String) {
+        confirmationMessage = message
+        showingConfirmation = true
     }
 }
 
@@ -235,27 +343,40 @@ struct WatchMealCard: View {
     let action: () -> Void
     
     var body: some View {
-        Button(action: action) {
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(meal.recipeName)
-                        .font(.caption)
-                        .fontWeight(.medium)
-                        .lineLimit(2)
-                    
-                    Text(meal.mealType)
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
-                }
-                
-                Spacer()
-                
-                Image(systemName: "play.fill")
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(meal.recipeName)
                     .font(.caption)
-                    .foregroundColor(.blue)
+                    .fontWeight(.medium)
+                    .lineLimit(2)
+                
+                Text(meal.mealType)
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+            }
+            
+            Spacer()
+            
+            HStack(spacing: 8) {
+                // Want to Cook button
+                Button(action: {
+                    WatchConnectivityManager.shared.markWantToday(recipeId: meal.recipeId)
+                }) {
+                    Image(systemName: "heart.fill")
+                        .font(.caption2)
+                        .foregroundColor(.red)
+                }
+                .buttonStyle(.plain)
+                
+                // Cook Now button
+                Button(action: action) {
+                    Image(systemName: "play.fill")
+                        .font(.caption)
+                        .foregroundColor(.blue)
+                }
+                .buttonStyle(.plain)
             }
         }
-        .buttonStyle(.plain)
         .padding(.vertical, 4)
     }
 }
@@ -263,39 +384,70 @@ struct WatchMealCard: View {
 struct WatchRecipeRow: View {
     let recipe: WatchRecipe
     let action: () -> Void
+    @State private var showingActionMenu = false
     
     var body: some View {
-        Button(action: action) {
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(recipe.title)
-                        .font(.caption)
-                        .fontWeight(.medium)
-                        .lineLimit(2)
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(recipe.title)
+                    .font(.caption)
+                    .fontWeight(.medium)
+                    .lineLimit(2)
+                
+                HStack {
+                    Text(formatTime(recipe.cookingTime))
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
                     
-                    HStack {
-                        Text(formatTime(recipe.cookingTime))
-                            .font(.caption2)
-                            .foregroundColor(.secondary)
-                        
-                        Text("•")
-                            .font(.caption2)
-                            .foregroundColor(.secondary)
-                        
-                        Text(recipe.difficulty)
-                            .font(.caption2)
-                            .foregroundColor(.secondary)
-                    }
+                    Text("•")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                    
+                    Text(recipe.difficulty)
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
                 }
+            }
+            
+            Spacer()
+            
+            // Action buttons
+            HStack(spacing: 8) {
+                // Want to Cook button
+                Button(action: {
+                    WatchConnectivityManager.shared.markWantToday(recipeId: recipe.id)
+                }) {
+                    Image(systemName: "heart.fill")
+                        .font(.caption2)
+                        .foregroundColor(.red)
+                }
+                .buttonStyle(.plain)
                 
-                Spacer()
-                
-                Image(systemName: "arrow.right")
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
+                // Cook Now button  
+                Button(action: action) {
+                    Image(systemName: "play.fill")
+                        .font(.caption2)
+                        .foregroundColor(.blue)
+                }
+                .buttonStyle(.plain)
             }
         }
-        .buttonStyle(.plain)
+        .padding(.vertical, 2)
+    }
+    
+    private func formatTime(_ minutes: Int) -> String {
+        if minutes < 60 {
+            return "\(minutes) min"
+        } else {
+            let hours = minutes / 60
+            let remainingMinutes = minutes % 60
+            
+            if remainingMinutes == 0 {
+                return hours == 1 ? "1 hour" : "\(hours) hours"
+            } else {
+                return hours == 1 ? "1 hour \(remainingMinutes) min" : "\(hours) hours \(remainingMinutes) min"
+            }
+        }
     }
 }
 

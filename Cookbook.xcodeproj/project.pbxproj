@@ -7,10 +7,21 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		1C798AD02E24648800EA28A7 /* CookbookWatch Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 1C9A4E842E1E579100D3AC38 /* CookbookWatch Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		1C798AD62E2464A300EA28A7 /* CookbookWatch.app in Resources */ = {isa = PBXBuildFile; fileRef = 1C9A4E7F2E1E579100D3AC38 /* CookbookWatch.app */; };
+		1C798B7F2E2467DC00EA28A7 /* WatchConnectivity.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1C798ADD2E2464D400EA28A7 /* WatchConnectivity.framework */; };
+		1C798B802E2467E900EA28A7 /* WatchConnectivity.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1C798ADB2E2464B700EA28A7 /* WatchConnectivity.framework */; };
 		1C9A4E852E1E579100D3AC38 /* CookbookWatch Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 1C9A4E842E1E579100D3AC38 /* CookbookWatch Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		1C798AD72E2464A300EA28A7 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 1C9A4DB62E1DB5B700D3AC38 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 1C9A4E7E2E1E579100D3AC38;
+			remoteInfo = CookbookWatch;
+		};
 		1C9A4DCD2E1DB5B900D3AC38 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 1C9A4DB62E1DB5B700D3AC38 /* Project object */;
@@ -24,13 +35,6 @@
 			proxyType = 1;
 			remoteGlobalIDString = 1C9A4DBD2E1DB5B700D3AC38;
 			remoteInfo = Cookbook;
-		};
-		1C9A4E862E1E579100D3AC38 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 1C9A4DB62E1DB5B700D3AC38 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 1C9A4E832E1E579100D3AC38;
-			remoteInfo = "CookbookWatch Watch App";
 		};
 		1C9A4E942E1E579300D3AC38 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -49,6 +53,17 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		1C798AD32E24648800EA28A7 /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolderSpec = 16;
+			files = (
+				1C798AD02E24648800EA28A7 /* CookbookWatch Watch App.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		1C9A4EA82E1E579300D3AC38 /* Embed Watch Content */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -63,6 +78,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		1C798ADB2E2464B700EA28A7 /* WatchConnectivity.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WatchConnectivity.framework; path = Platforms/WatchOS.platform/Developer/SDKs/WatchOS11.5.sdk/System/Library/Frameworks/WatchConnectivity.framework; sourceTree = DEVELOPER_DIR; };
+		1C798ADD2E2464D400EA28A7 /* WatchConnectivity.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WatchConnectivity.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/System/Library/Frameworks/WatchConnectivity.framework; sourceTree = DEVELOPER_DIR; };
 		1C9A4DBE2E1DB5B700D3AC38 /* Cookbook.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Cookbook.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		1C9A4DCC2E1DB5B900D3AC38 /* CookbookTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CookbookTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		1C9A4DD62E1DB5B900D3AC38 /* CookbookUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CookbookUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -110,6 +127,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1C798B7F2E2467DC00EA28A7 /* WatchConnectivity.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -131,6 +149,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1C798B802E2467E900EA28A7 /* WatchConnectivity.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -151,6 +170,15 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		1C798ACF2E24648800EA28A7 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				1C798ADD2E2464D400EA28A7 /* WatchConnectivity.framework */,
+				1C798ADB2E2464B700EA28A7 /* WatchConnectivity.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		1C9A4DB52E1DB5B700D3AC38 = {
 			isa = PBXGroup;
 			children = (
@@ -160,6 +188,7 @@
 				1C9A4E882E1E579100D3AC38 /* CookbookWatch Watch App */,
 				1C9A4E962E1E579300D3AC38 /* CookbookWatch Watch AppTests */,
 				1C9A4EA02E1E579300D3AC38 /* CookbookWatch Watch AppUITests */,
+				1C798ACF2E24648800EA28A7 /* Frameworks */,
 				1C9A4DBF2E1DB5B700D3AC38 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -188,10 +217,12 @@
 				1C9A4DBA2E1DB5B700D3AC38 /* Sources */,
 				1C9A4DBB2E1DB5B700D3AC38 /* Frameworks */,
 				1C9A4DBC2E1DB5B700D3AC38 /* Resources */,
+				1C798AD32E24648800EA28A7 /* Embed Watch Content */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				1C798AD82E2464A300EA28A7 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				1C9A4DC02E1DB5B700D3AC38 /* Cookbook */,
@@ -259,7 +290,6 @@
 			buildRules = (
 			);
 			dependencies = (
-				1C9A4E872E1E579100D3AC38 /* PBXTargetDependency */,
 			);
 			name = CookbookWatch;
 			packageProductDependencies = (
@@ -403,6 +433,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1C798AD62E2464A300EA28A7 /* CookbookWatch.app in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -496,6 +527,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		1C798AD82E2464A300EA28A7 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 1C9A4E7E2E1E579100D3AC38 /* CookbookWatch */;
+			targetProxy = 1C798AD72E2464A300EA28A7 /* PBXContainerItemProxy */;
+		};
 		1C9A4DCE2E1DB5B900D3AC38 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 1C9A4DBD2E1DB5B700D3AC38 /* Cookbook */;
@@ -505,11 +541,6 @@
 			isa = PBXTargetDependency;
 			target = 1C9A4DBD2E1DB5B700D3AC38 /* Cookbook */;
 			targetProxy = 1C9A4DD72E1DB5B900D3AC38 /* PBXContainerItemProxy */;
-		};
-		1C9A4E872E1E579100D3AC38 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 1C9A4E832E1E579100D3AC38 /* CookbookWatch Watch App */;
-			targetProxy = 1C9A4E862E1E579100D3AC38 /* PBXContainerItemProxy */;
 		};
 		1C9A4E952E1E579300D3AC38 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
