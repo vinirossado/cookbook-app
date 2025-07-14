@@ -17,6 +17,8 @@ class WatchConnectivityManager: NSObject, ObservableObject {
     @Published var shoppingItems: [WatchShoppingItem] = []
     @Published var activeTimers: [WatchTimer] = []
     @Published var isConnected = false
+    @Published var suggestedRecipe: (title: String, id: UUID)? = nil
+    @Published var showRecipeSuggestion = false
     
     private override init() {
         super.init()
@@ -171,13 +173,10 @@ extension WatchConnectivityManager: WCSessionDelegate {
                let id = UUID(uuidString: idString) {
                 print("⌚ Random recipe received: \(title)")
                 
-                // Automatically add the random recipe to want today
-                self.markWantToday(recipeId: id)
-                
-                // Could show an alert or navigate to the recipe
+                // Show user the recipe suggestion - let them decide
                 DispatchQueue.main.async {
-                    // You could trigger a sheet or alert here showing the selected recipe
-                    print("⌚ Random recipe \(title) added to want today!")
+                    // Store the suggested recipe for user to act on
+                    self.showRandomRecipeSuggestion(title: title, recipeId: id)
                 }
             }
         default:
@@ -263,5 +262,26 @@ extension WatchConnectivityManager: WCSessionDelegate {
             // Will implement timer parsing when cooking mode is added
             print("⌚ Received timers data: \(timersData.count) timers")
         }
+    }
+}
+
+// MARK: - Recipe Suggestion Handling
+extension WatchConnectivityManager {
+    private func showRandomRecipeSuggestion(title: String, recipeId: UUID) {
+        suggestedRecipe = (title: title, id: recipeId)
+        showRecipeSuggestion = true
+        print("⌚ Showing recipe suggestion: \(title)")
+    }
+    
+    func acceptRecipeSuggestion() {
+        guard let suggested = suggestedRecipe else { return }
+        markWantToday(recipeId: suggested.id)
+        dismissRecipeSuggestion()
+        print("⌚ User accepted recipe suggestion: \(suggested.title)")
+    }
+    
+    func dismissRecipeSuggestion() {
+        suggestedRecipe = nil
+        showRecipeSuggestion = false
     }
 }

@@ -20,6 +20,9 @@ class WatchConnectivityManager: NSObject, ObservableObject {
     @Published var activeTimers: [String] = [] // Temporarily simplified
     
     private var session: WCSession?
+    private var lastRandomRecipeRequest: Date?
+    private var recentlyProcessedActions: Set<String> = []
+    
     @MainActor private var appState: AppState {
         return AppState.shared
     }
@@ -30,6 +33,11 @@ class WatchConnectivityManager: NSObject, ObservableObject {
         if WCSession.isSupported() {
             session = WCSession.default
             session?.delegate = self
+        }
+        
+        // Cleanup recently processed actions every 30 seconds
+        Timer.scheduledTimer(withTimeInterval: 30.0, repeats: true) { _ in
+            self.recentlyProcessedActions.removeAll()
         }
     }
     
@@ -333,51 +341,56 @@ extension WatchConnectivityManager: WCSessionDelegate {
         
         // Find the recipe
         if let recipe = appState.recipes.first(where: { $0.id == recipeId }) {
-            // Create a new planned meal for today
-            let todayMeal = PlannedMeal(
-                recipeId: recipe.id,
-                recipeName: recipe.title,
-                mealType: .lunch, // Default to lunch
-                scheduledDate: Date(),
-                servings: recipe.servingSize
-            )
+            // Check if recipe is already in want today to prevent duplicates
+            let alreadyWanted = appState.wantTodayMeals.contains { $0.recipeId == recipeId }
             
-            appState.addMealToPlan(todayMeal)
-            appState.markWantToday(todayMeal)
-            
-            print("⏰ Added to want today from Watch: \(recipe.title)")
-            
-            // Send confirmation back to Watch
-            sendConfirmationToWatch(action: "wantTodayAdded", recipeName: recipe.title)
-            
-            // Sync updated data back to Watch
-            syncDataToWatch()
-            
-            // Create detailed notification about the recipe choice
-            Task {
-                await NotificationManager.shared.requestAuthorization()
-                
-                // Main notification
-                NotificationManager.shared.scheduleLocalNotification(
-                    id: "watch_wants_to_cook_\(recipeId)",
-                    title: "🍳 Recipe Selected on Apple Watch",
-                    body: "You chose \(recipe.title) on your Watch! Ready to start cooking?",
-                    timeInterval: 1
+            if !alreadyWanted {
+                // Create a new planned meal for today
+                let todayMeal = PlannedMeal(
+                    recipeId: recipe.id,
+                    recipeName: recipe.title,
+                    mealType: .lunch, // Default to lunch
+                    scheduledDate: Date(),
+                    servings: recipe.servingSize
                 )
                 
-                // Follow-up reminder notification
-                NotificationManager.shared.scheduleLocalNotification(
-                    id: "cooking_reminder_\(recipeId)",
-                    title: "👨‍🍳 Ready to Cook?",
-                    body: "\(recipe.title) is waiting for you! Estimated time: \(recipe.formattedTotalTime)",
-                    timeInterval: 30 // 30 seconds later
-                )
-            }
-            
-            // Add some visual feedback on iPhone too
-            DispatchQueue.main.async {
-                // This could trigger a toast or banner in your app if it's open
-                print("📱 iPhone: Recipe \(recipe.title) selected from Watch!")
+                appState.addMealToPlan(todayMeal)
+                appState.markWantToday(todayMeal)
+                
+                print("⏰ Added to want today from Watch: \(recipe.title)")
+                
+                // Send confirmation back to Watch
+                sendConfirmationToWatch(action: "wantTodayAdded", recipeName: recipe.title)
+                
+                // Sync updated data back to Watch (only once)
+                syncDataToWatch()
+                
+                // Single notification about the action
+                Task {
+                    await NotificationManager.shared.requestAuthorization()
+                    NotificationManager.shared.scheduleLocalNotification(
+                        id: "watch_wants_to_cook_\(recipeId)",
+                        title: "🍳 Recipe Added from Watch",
+                        body: "\(recipe.title) added to Want Today! Ready to cook? (\(recipe.formattedTotalTime))",
+                        timeInterval: 1
+                    )
+                }
+            } else {
+                print("⏰ Recipe \(recipe.title) already in want today, skipping duplicate")
+                
+                // Send confirmation without adding duplicate
+                sendConfirmationToWatch(action: "wantTodayAlreadyExists", recipeName: recipe.title)
+                
+                // Simple notification about duplicate
+                Task {
+                    await NotificationManager.shared.requestAuthorization()
+                    NotificationManager.shared.scheduleLocalNotification(
+                        id: "watch_duplicate_\(recipeId)",
+                        title: "✅ Already on Your List",
+                        body: "\(recipe.title) is already in your Want Today list!",
+                        timeInterval: 1
+                    )
+                }
             }
         }
     }
@@ -408,10 +421,19 @@ extension WatchConnectivityManager: WCSessionDelegate {
     private func handleRequestRandomRecipe(_ message: [String: Any]) {
         print("🎲 Random recipe requested from Watch")
         
+        // Rate limit: only allow one request per 5 seconds
+        let now = Date()
+        if let lastRequest = lastRandomRecipeRequest,
+           now.timeIntervalSince(lastRequest) < 5.0 {
+            print("🎲 Rate limiting random recipe request")
+            return
+        }
+        lastRandomRecipeRequest = now
+        
         if let randomRecipe = appState.recipes.randomElement() {
             print("🎲 Selected random recipe: \(randomRecipe.title)")
             
-            // Send the random recipe back to Watch
+            // Send the random recipe back to Watch (don't auto-add to want today)
             guard let session = session, session.isReachable else { return }
             
             let response: [String: Any] = [
@@ -428,42 +450,19 @@ extension WatchConnectivityManager: WCSessionDelegate {
                 print("Error sending random recipe: \(error.localizedDescription)")
             }
             
-            // Trigger engaging notification on iPhone
+            // Single notification on iPhone about the suggestion
             Task {
                 await NotificationManager.shared.requestAuthorization()
                 NotificationManager.shared.scheduleLocalNotification(
-                    id: "random_recipe_suggestion",
-                    title: "🎲 Your Watch Picked a Recipe!",
-                    body: "How about cooking \(randomRecipe.title)? It takes about \(randomRecipe.formattedTotalTime) and is \(randomRecipe.difficulty.rawValue.lowercased()) to make!",
+                    id: "random_recipe_suggestion_\(randomRecipe.id)",
+                    title: "🎲 Recipe Suggested on Watch",
+                    body: "Your Watch suggested: \(randomRecipe.title) (\(randomRecipe.formattedTotalTime), \(randomRecipe.difficulty.rawValue.lowercased()))",
                     timeInterval: 1
                 )
-                
-                // Optional: Auto-add to want today
-                let suggestedMeal = PlannedMeal(
-                    recipeId: randomRecipe.id,
-                    recipeName: randomRecipe.title,
-                    mealType: .lunch,
-                    scheduledDate: Date(),
-                    servings: randomRecipe.servingSize
-                )
-                
-                // Safely update main actor from main actor context
-                appState.addMealToPlan(suggestedMeal)
-                appState.markWantToday(suggestedMeal)
-                
-                // Sync the updated data back to Watch
-                syncDataToWatch()
-                
-                // Follow-up notification with action
-                NotificationManager.shared.scheduleLocalNotification(
-                    id: "random_recipe_action",
-                    title: "🍳 Ready to Start?",
-                    body: "\(randomRecipe.title) has been added to your Want Today list. Tap to open the app!",
-                    timeInterval: 5
-                )
             }
+            
         } else {
-            // No recipes available
+            // No recipes available - simple notification
             Task {
                 await NotificationManager.shared.requestAuthorization()
                 NotificationManager.shared.scheduleLocalNotification(

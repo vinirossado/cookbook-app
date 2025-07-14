@@ -48,6 +48,7 @@ struct WatchTodayView: View {
     @EnvironmentObject private var connectivity: WatchConnectivityManager
     @State private var showingConfirmation = false
     @State private var confirmationMessage = ""
+    @State private var lastRandomRequestTime: Date?
     
     var body: some View {
         ScrollView {
@@ -122,6 +123,15 @@ struct WatchTodayView: View {
                 // Quick Actions
                 VStack(spacing: 8) {
                     Button("🎲 Random Recipe to Cook") {
+                        // Rate limit: only allow one request per 3 seconds
+                        let now = Date()
+                        if let lastRequest = lastRandomRequestTime, 
+                           now.timeIntervalSince(lastRequest) < 3.0 {
+                            showConfirmation("Please wait a moment...")
+                            return
+                        }
+                        
+                        lastRandomRequestTime = now
                         connectivity.requestRandomRecipe()
                         showConfirmation("Finding a recipe for you...")
                     }
@@ -148,6 +158,18 @@ struct WatchTodayView: View {
             Button("OK") { }
         } message: {
             Text(confirmationMessage)
+        }
+        .alert("🎲 Recipe Suggestion", isPresented: $connectivity.showRecipeSuggestion) {
+            Button("🍳 Cook This!") {
+                connectivity.acceptRecipeSuggestion()
+            }
+            Button("Pass") {
+                connectivity.dismissRecipeSuggestion()
+            }
+        } message: {
+            if let suggested = connectivity.suggestedRecipe {
+                Text("How about cooking \(suggested.title)? Want to add it to your Want Today list?")
+            }
         }
     }
     
