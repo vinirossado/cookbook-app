@@ -1,26 +1,11 @@
 //
-//  CookbookWatch Watch App.swift
+//  ContentView.swift
 //  CookbookWatch Watch App
 //
 //  Created by Vinicius Rossado on 08/07/2025.
 //
 
 import SwiftUI
-
-@main
-struct CookbookWatch_Watch_App: App {
-    @StateObject private var watchConnectivity = WatchConnectivityManager.shared
-    
-    var body: some Scene {
-        WindowGroup {
-            ContentView()
-                .environmentObject(watchConnectivity)
-                .onAppear {
-                    watchConnectivity.activateSession()
-                }
-        }
-    }
-}
 
 struct ContentView: View {
     @EnvironmentObject private var connectivity: WatchConnectivityManager
