@@ -6,7 +6,9 @@
 //
 
 import Foundation
+#if canImport(WatchConnectivity)
 import WatchConnectivity
+#endif
 import SwiftUI
 
 class WatchConnectivityManager: NSObject, ObservableObject {
@@ -30,15 +32,36 @@ class WatchConnectivityManager: NSObject, ObservableObject {
     override init() {
         super.init()
         
+        #if canImport(WatchConnectivity)
         if WCSession.isSupported() {
             session = WCSession.default
             session?.delegate = self
         }
+        #endif
         
         // Cleanup recently processed actions every 30 seconds
         Timer.scheduledTimer(withTimeInterval: 30.0, repeats: true) { _ in
             self.recentlyProcessedActions.removeAll()
         }
+        
+        // Listen for timer events from the iPhone app
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleTimerStarted(_:)),
+            name: .timerStarted,
+            object: nil
+        )
+        
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleTimerStopped(_:)),
+            name: .timerStopped,
+            object: nil
+        )
+    }
+    
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
     
     func activateSession() {
@@ -216,6 +239,60 @@ class WatchConnectivityManager: NSObject, ObservableObject {
             try session.updateApplicationContext(context)
         } catch {
             print("Error sending application context: \(error.localizedDescription)")
+        }
+    }
+    
+    // MARK: - Timer Management Methods
+    func startTimer(recipeName: String, stepNumber: Int, duration: TimeInterval, stepDescription: String = "") {
+        // This method is called from the notification handlers
+        // The timer is already started on the iPhone via NotificationManager
+        // We just need to notify the watch
+        
+        let timerId = UUID()
+        let timerData = [
+            "action": "timerStarted",
+            "timer": [
+                "id": timerId.uuidString,
+                "recipeName": recipeName,
+                "stepNumber": stepNumber,
+                "endTime": Date().addingTimeInterval(duration).timeIntervalSince1970,
+                "duration": duration,
+                "stepDescription": stepDescription
+            ]
+        ] as [String : Any]
+        
+        sendMessageToWatch(timerData)
+        print("📱 Timer started and sent to watch: \(recipeName) - Step \(stepNumber)")
+    }
+    
+    func stopTimer(id: String) {
+        let message = [
+            "action": "timerStopped",
+            "timerId": id
+        ]
+        
+        sendMessageToWatch(message)
+        print("📱 Timer stopped and notified to watch: \(id)")
+    }
+    
+    private func sendMessageToWatch(_ message: [String: Any]) {
+        guard let session = session, session.isPaired && session.isWatchAppInstalled else {
+            print("📱 Watch not available for message")
+            return
+        }
+        
+        if session.isReachable {
+            session.sendMessage(message, replyHandler: nil) { error in
+                print("📱 Error sending message to watch: \(error.localizedDescription)")
+            }
+        } else {
+            // If not reachable, send via application context for when watch becomes available
+            do {
+                try session.updateApplicationContext(message)
+                print("📱 Message queued for watch via application context")
+            } catch {
+                print("📱 Failed to queue message for watch: \(error.localizedDescription)")
+            }
         }
     }
 }
@@ -505,5 +582,36 @@ extension WatchConnectivityManager: WCSessionDelegate {
         print("📱 iPhone received user info: \(userInfo)")
         handleApplicationContext(userInfo)
     }
+    
+    // MARK: - Timer Event Handlers
+    @objc private func handleTimerStarted(_ notification: Notification) {
+        guard let userInfo = notification.userInfo,
+              let duration = userInfo["duration"] as? TimeInterval,
+              let recipeName = userInfo["recipeName"] as? String else { return }
+        
+        let stepNumber = userInfo["stepNumber"] as? Int ?? 1
+        let stepDescription = userInfo["stepDescription"] as? String ?? ""
+        
+        // Start timer on watch
+        startTimer(
+            recipeName: recipeName,
+            stepNumber: stepNumber,
+            duration: duration,
+            stepDescription: stepDescription
+        )
+    }
+    
+    @objc private func handleTimerStopped(_ notification: Notification) {
+        guard let userInfo = notification.userInfo,
+              let timerId = userInfo["timerId"] as? String else { return }
+        
+        stopTimer(id: timerId)
+    }
+}
+
+// MARK: - Notification Names
+extension Notification.Name {
+    static let timerStarted = Notification.Name("TimerStarted")
+    static let timerStopped = Notification.Name("TimerStopped")
 }
 

@@ -13,6 +13,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		1C798AD52E24648800EA28A7 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 1C9A4DB62E1DB5B700D3AC38 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 1C9A4E832E1E579100D3AC38;
+			remoteInfo = "CookbookWatch Watch App";
+		};
 		1C9A4DCD2E1DB5B900D3AC38 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 1C9A4DB62E1DB5B700D3AC38 /* Project object */;
@@ -35,13 +42,6 @@
 			remoteInfo = "CookbookWatch Watch App";
 		};
 		1C9A4E9E2E1E579300D3AC38 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 1C9A4DB62E1DB5B700D3AC38 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 1C9A4E832E1E579100D3AC38;
-			remoteInfo = "CookbookWatch Watch App";
-		};
-		1C798AD52E24648800EA28A7 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 1C9A4DB62E1DB5B700D3AC38 /* Project object */;
 			proxyType = 1;
@@ -496,6 +496,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		1C798AD42E24648800EA28A7 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 1C9A4E832E1E579100D3AC38 /* CookbookWatch Watch App */;
+			targetProxy = 1C798AD52E24648800EA28A7 /* PBXContainerItemProxy */;
+		};
 		1C9A4DCE2E1DB5B900D3AC38 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 1C9A4DBD2E1DB5B700D3AC38 /* Cookbook */;
@@ -515,11 +520,6 @@
 			isa = PBXTargetDependency;
 			target = 1C9A4E832E1E579100D3AC38 /* CookbookWatch Watch App */;
 			targetProxy = 1C9A4E9E2E1E579300D3AC38 /* PBXContainerItemProxy */;
-		};
-		1C798AD42E24648800EA28A7 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 1C9A4E832E1E579100D3AC38 /* CookbookWatch Watch App */;
-			targetProxy = 1C798AD52E24648800EA28A7 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 

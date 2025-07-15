@@ -494,7 +494,12 @@ class CookingModeViewModel {
         NotificationCenter.default.post(
             name: .timerStarted,
             object: nil,
-            userInfo: ["duration": duration, "recipeName": recipe?.title ?? ""]
+            userInfo: [
+                "duration": duration, 
+                "recipeName": recipe?.title ?? "",
+                "stepNumber": currentStep + 1,
+                "stepDescription": recipe?.instructions[currentStep].instruction ?? ""
+            ]
         )
     }
     
@@ -692,10 +697,10 @@ struct TertiaryButtonStyle: ButtonStyle {
 }
 
 // MARK: - Notifications
-extension Notification.Name {
-    static let timerStarted = Notification.Name("timerStarted")
-    static let timerFinished = Notification.Name("timerFinished")
-}
+//extension Notification.Name {
+//    static let timerStarted = Notification.Name("timerStarted")
+//    static let timerFinished = Notification.Name("timerFinished")
+//}
 
 #Preview {
     let interactor = RecipeDetailInteractor()

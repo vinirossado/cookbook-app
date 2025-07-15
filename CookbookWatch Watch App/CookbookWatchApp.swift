@@ -9,15 +9,9 @@ import SwiftUI
 
 @main
 struct CookbookWatchApp: App {
-    @StateObject private var watchConnectivity = WatchConnectivityManager.shared
-    
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .environmentObject(watchConnectivity)
-                .onAppear {
-                    watchConnectivity.activateSession()
-                }
         }
     }
 }
