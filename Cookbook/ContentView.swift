@@ -9,7 +9,6 @@ import SwiftUI
 
 struct ContentView: View {
     @Environment(AppState.self) private var appState
-    @State private var appCoordinator = AppCoordinator()
     
     var body: some View {
         if appState.isAuthenticated {
