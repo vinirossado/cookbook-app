@@ -696,12 +696,6 @@ struct TertiaryButtonStyle: ButtonStyle {
     }
 }
 
-// MARK: - Notifications
-//extension Notification.Name {
-//    static let timerStarted = Notification.Name("timerStarted")
-//    static let timerFinished = Notification.Name("timerFinished")
-//}
-
 #Preview {
     let interactor = RecipeDetailInteractor()
     let presenter = RecipeDetailPresenter()

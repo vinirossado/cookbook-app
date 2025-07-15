@@ -104,13 +104,6 @@ class AuthenticationInteractor: AuthenticationInteractorProtocol {
         }
     }
     
-    // MARK: - Sign Out
-//    func signOut(request: Authentication.SignOut.Request) async {
-//        worker.signOut()
-//        let response = Authentication.SignOut.Response()
-//        await presenter?.presentSignOutResult(response: response)
-//    }
-    
     // MARK: - Forgot Password
     func forgotPassword(request: Authentication.ForgotPassword.Request) async {
         guard isValidEmail(request.email) else {
