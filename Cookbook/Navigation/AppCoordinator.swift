@@ -118,6 +118,14 @@ struct MainTabView: View {
                 }
                 .tag(TabItem.today)
             
+            // Smart Features Tab
+            SmartFeaturesViewSimple()
+                .tabItem {
+                    Image(systemName: appState.selectedTab == .smartFeatures ? TabItem.smartFeatures.selectedIcon : TabItem.smartFeatures.icon)
+                    Text(TabItem.smartFeatures.rawValue)
+                }
+                .tag(TabItem.smartFeatures)
+            
             // Profile Tab
             Text("Profile - Coming Soon")
                 .tabItem {

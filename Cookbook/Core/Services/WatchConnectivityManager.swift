@@ -313,16 +313,20 @@ extension WatchConnectivityManager: WCSessionDelegate {
         }
     }
     
-    #if os(iOS)
     func sessionDidBecomeInactive(_ session: WCSession) {
         print("Watch session became inactive")
+        DispatchQueue.main.async {
+            self.isConnected = false
+        }
     }
     
     func sessionDidDeactivate(_ session: WCSession) {
         print("Watch session deactivated")
+        DispatchQueue.main.async {
+            self.isConnected = false
+        }
         session.activate()
     }
-    #endif
     
     func session(_ session: WCSession, didReceiveMessage message: [String : Any]) {
         print("Received message from counterpart: \(message)")
@@ -397,7 +401,7 @@ extension WatchConnectivityManager: WCSessionDelegate {
             sendConfirmationToWatch(action: "cookingModeStarted", recipeName: recipe.title)
             
             // Trigger local notification as feedback
-            Task {
+            Task { @MainActor in
                 await NotificationManager.shared.requestAuthorization()
                 NotificationManager.shared.scheduleLocalNotification(
                     id: "cooking_mode_\(recipeId)",
@@ -443,7 +447,7 @@ extension WatchConnectivityManager: WCSessionDelegate {
                 syncDataToWatch()
                 
                 // Single notification about the action
-                Task {
+                Task { @MainActor in
                     await NotificationManager.shared.requestAuthorization()
                     NotificationManager.shared.scheduleLocalNotification(
                         id: "watch_wants_to_cook_\(recipeId)",
@@ -459,7 +463,7 @@ extension WatchConnectivityManager: WCSessionDelegate {
                 sendConfirmationToWatch(action: "wantTodayAlreadyExists", recipeName: recipe.title)
                 
                 // Simple notification about duplicate
-                Task {
+                Task { @MainActor in
                     await NotificationManager.shared.requestAuthorization()
                     NotificationManager.shared.scheduleLocalNotification(
                         id: "watch_duplicate_\(recipeId)",
@@ -528,7 +532,7 @@ extension WatchConnectivityManager: WCSessionDelegate {
             }
             
             // Single notification on iPhone about the suggestion
-            Task {
+            Task { @MainActor in
                 await NotificationManager.shared.requestAuthorization()
                 NotificationManager.shared.scheduleLocalNotification(
                     id: "random_recipe_suggestion_\(randomRecipe.id)",
@@ -540,7 +544,7 @@ extension WatchConnectivityManager: WCSessionDelegate {
             
         } else {
             // No recipes available - simple notification
-            Task {
+            Task { @MainActor in
                 await NotificationManager.shared.requestAuthorization()
                 NotificationManager.shared.scheduleLocalNotification(
                     id: "no_recipes_available",

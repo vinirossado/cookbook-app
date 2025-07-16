@@ -531,6 +531,7 @@ enum TabItem: String, CaseIterable {
     case shopping = "Shopping"
     case planner = "Planner"
     case today = "Today"
+    case smartFeatures = "Smart"
     case profile = "Profile"
     
     var icon: String {
@@ -539,6 +540,7 @@ enum TabItem: String, CaseIterable {
         case .shopping: return "cart"
         case .planner: return "calendar"
         case .today: return "clock"
+        case .smartFeatures: return "brain"
         case .profile: return "person.circle"
         }
     }
@@ -549,6 +551,7 @@ enum TabItem: String, CaseIterable {
         case .shopping: return "cart.fill"
         case .planner: return "calendar"
         case .today: return "clock.fill"
+        case .smartFeatures: return "brain.filled.head.profile"
         case .profile: return "person.circle.fill"
         }
     }
